@@ -1,0 +1,34 @@
+baseURL = 'https://github.com/sunCityDaa/sunCityDaa.github.io.git'
+languageCode = 'en-US'
+title = 'SunCityDaa Site'
+theme = "void"
+
+# Social media links
+[params]
+  [params.social]
+    github = "https://github.com/sunCityDaa"
+    twitter = "https://twitter.com/yourusername"
+    email = "2367758021@qq.com"
+  [params.avatar]
+    url = "https://example.com/your-avatar.jpg"
+
+# Main menu
+[[menus.main]]
+name = 'Home'
+pageRef = '/'
+weight = 10
+
+[[menus.main]]
+name = 'Posts'
+pageRef = '/posts'
+weight = 20
+
+[[menus.main]]
+name = 'Tags'
+pageRef = '/tags'
+weight = 30
+
+[[menus.main]]
+name = 'About'
+pageRef = '/about'
+weight = 40
