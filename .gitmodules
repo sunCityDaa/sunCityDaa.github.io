@@ -1,8 +1,0 @@
-<<<<<<< HEAD
-[submodule "themes/void"]
-	path = themes/void
-=======
-[submodule "themes/hugo-theme-void"]
-	path = themes/hugo-theme-void
->>>>>>> origin/master
-	url = https://github.com/Daucloud/hugo-theme-void
