@@ -362,6 +362,12 @@
   .block {
     display: block;
   }
+<<<<<<< HEAD
+=======
+  .contents {
+    display: contents;
+  }
+>>>>>>> origin/master
   .flex {
     display: flex;
   }

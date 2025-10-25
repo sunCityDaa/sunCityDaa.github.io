@@ -3,6 +3,7 @@ languageCode = 'en-US'
 title = 'sunCityDaa WebSite'
 theme = "void"
 
+
 # Social media links
 [params]
   [params.social]
@@ -11,6 +12,7 @@ theme = "void"
     email = "2367758021@qq.com"
   # [params.avatar]
   #   url = "https://example.com/your-avatar.jpg"
+
 
 # Main menu
 [[menus.main]]
