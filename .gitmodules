@@ -1,3 +1,3 @@
-[submodule "themes/void"]
-	path = themes/void
+[submodule "themes/hugo-theme-void"]
+	path = themes/hugo-theme-void
 	url = https://github.com/Daucloud/hugo-theme-void
