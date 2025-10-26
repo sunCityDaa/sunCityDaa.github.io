@@ -31,7 +31,7 @@ jobs:
           # extended: true       # 若主题需扩展版，取消注释
 
       - name: Install dependencies
-        run: npm cli   # 生成优化后的静态文件
+        run: npm ci   # 生成优化后的静态文件
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
