@@ -30,8 +30,8 @@ jobs:
           hugo-version: 'latest'
           # extended: true       # 若主题需扩展版，取消注释
 
-      - name: Build with Hugo
-        run: hugo --minify --gc   # 生成优化后的静态文件
+      - name: Install dependencies
+        run: npm cli   # 生成优化后的静态文件
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
