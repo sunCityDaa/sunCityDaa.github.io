@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LLM 可视化 · nano-gpt 3D 讲解（复刻版）</title>
+  <meta name="description" content="在浏览器中真实运行的 GPT 3D 可视化：逐层展示 nano-gpt 的嵌入、LayerNorm、自注意力、MLP 与 softmax。复刻自 bbycroft.net/llm。">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <a class="home" href="/" title="返回博客首页">← 博客</a>
+      <span class="title">LLM 可视化 <small>nano-gpt · 3D 讲解</small></span>
+    </div>
+    <nav class="models" id="model-buttons"></nav>
+    <div class="actions">
+      <a href="/posts/llm-viz-rea/" title="复刻过程与技术文档">文档</a>
+      <a href="https://bbycroft.net/llm" target="_blank" rel="noopener" title="原站">原站 ↗</a>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel">
+      <section class="input-box">
+        <div class="input-row">
+          <span class="lbl">输入</span>
+          <div id="token-input" class="token-input" title="点击字母可在 A/B/C 之间切换"></div>
+          <button id="btn-random" class="btn small" title="随机输入">随机</button>
+          <button id="btn-run" class="btn small primary" title="重新推理">运行</button>
+        </div>
+        <div class="input-row">
+          <span class="lbl">输出</span>
+          <div id="token-output" class="token-input readonly"></div>
+          <span id="sort-check" class="check"></span>
+        </div>
+      </section>
+
+      <nav class="chapter-nav">
+        <button id="btn-prev" class="btn" aria-label="上一章">‹</button>
+        <div class="chapter-title"><span id="chapter-num"></span> <span id="chapter-name"></span></div>
+        <button id="btn-next" class="btn" aria-label="下一章">›</button>
+      </nav>
+
+      <div class="panel-body">
+        <ol id="toc" class="toc"></ol>
+        <article id="chapter-content" class="content"></article>
+      </div>
+
+      <footer class="player">
+        <button id="btn-play" class="btn play" aria-label="播放">▶</button>
+        <div class="progress"><div id="progress-bar"></div></div>
+        <span id="play-label" class="play-label"></span>
+      </footer>
+    </aside>
+
+    <section class="viewport">
+      <canvas id="canvas"></canvas>
+      <div id="labels" class="labels"></div>
+      <div id="tooltip" class="tooltip" hidden></div>
+      <div class="view-tools">
+        <button id="btn-reset" class="btn small" title="回到当前章节视角">⟲ 视角</button>
+        <button id="btn-overview" class="btn small" title="查看整个模型">全景</button>
+      </div>
+      <div class="legend">
+        <span><i class="sw neg"></i>负</span><span><i class="sw zero"></i>0</span><span><i class="sw pos"></i>正</span>
+        <span class="sep"></span>
+        <span><i class="sw wt"></i>权重</span><span><i class="sw act"></i>激活</span><span><i class="sw agg"></i>统计量</span>
+      </div>
+      <div id="loading" class="loading">正在加载模型权重…</div>
+    </section>
+  </main>
+
+  <noscript>本页需要启用 JavaScript 与 WebGL2。</noscript>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
