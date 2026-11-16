@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr" class="h-full">
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>用 REA &#43; Craft Anything 逆向并复刻 LLM 3D 可视化（bbycroft.net/llm） | sunCityDaa Website</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+
+<link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+<link rel="shortcut icon" href="/favicon/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+<link rel="manifest" href="/favicon/site.webmanifest" />
+
+
+
+  
+    
+    
+      
+        
+          <link rel="stylesheet" href="/css/main.42b28607fdf34a064492f3fa129c316e3523f87b33ee2057425c1924b24f2a98.css" integrity="sha256-QrKGB/3zSgZEkvP6EpwxbjUj&#43;Hsz7iBXQlwZJLJPKpg=" crossorigin="anonymous">
+        
+      
+    
+  
+
+
+
+
+
+<link rel="stylesheet" href="/css/style.min.b8957659e8f2f20e0a23b5cc1f1154837f41cca9f5570fd8f30cd1c087568650.css" media="screen" integrity="sha256-uJV2Wejy8g4KI7XMHxFUg39BzKn1Vw/Y8wzRwIdWhlA=">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', (event) => {
+    document.querySelectorAll('pre code').forEach((el) => {
+      hljs.highlightElement(el);
+      
+      setTimeout(() => {
+        el.style.backgroundColor = 'transparent';
+        el.parentElement.style.backgroundColor = '#ffffff';
+      }, 10);
+    });
+  });
+</script>
+
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+      <script src="/js/main.b86ee76fd11b0aa5b9ab803419695ebcbc971f8cee7c871a420d36f3851f7ab1.js" integrity="sha256-uG7nb9EbCqW5q4A0GWlevLyXH4zufIcaQg0284UferE=" crossorigin="anonymous"></script>
+
+
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "$", right: "$", display: false}
+      ],
+      throwOnError: false
+    });
+    
+    
+    document.querySelectorAll('pre code').forEach(function(codeBlock) {
+      
+      let language = '';
+      codeBlock.className.split(' ').forEach(function(cls) {
+        if (cls.startsWith('language-')) {
+          language = cls.substring(9);
+        }
+      });
+      
+      
+      const pre = codeBlock.parentNode;
+      const wrapper = pre.parentNode;
+      
+      
+      const container = document.createElement('div');
+      container.className = 'code-block-container';
+      container.style.backgroundColor = '#ffffff';
+      
+      
+      const header = document.createElement('div');
+      header.className = 'code-block-header';
+      
+      
+      if (language) {
+        const langLabel = document.createElement('span');
+        langLabel.className = 'code-language-label';
+        langLabel.textContent = language.toUpperCase();
+        header.appendChild(langLabel);
+      }
+      
+      
+      const copyButton = document.createElement('button');
+      copyButton.className = 'copy-button';
+      copyButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg> Copy';
+      
+      copyButton.addEventListener('click', function() {
+        
+        const code = codeBlock.textContent;
+        
+        
+        navigator.clipboard.writeText(code).then(function() {
+          
+          copyButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Copied!';
+          
+          
+          setTimeout(function() {
+            copyButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg> Copy';
+          }, 2000);
+        });
+      });
+      
+      header.appendChild(copyButton);
+      
+      
+      if (pre.parentNode) {
+        pre.parentNode.removeChild(pre);
+      }
+      
+      
+      pre.style.backgroundColor = '#ffffff';
+      codeBlock.style.backgroundColor = '#ffffff';
+      
+      
+      container.appendChild(header);
+      container.appendChild(pre);
+      
+      
+      wrapper.appendChild(container);
+      
+      
+      hljs.highlightElement(codeBlock);
+      
+      
+      setTimeout(() => {
+        pre.style.backgroundColor = '#ffffff';
+        codeBlock.style.backgroundColor = '#ffffff';
+      }, 50);
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    
+    const footnoteBacklinks = document.querySelectorAll('.footnote-backref');
+    
+    footnoteBacklinks.forEach(function(backlink) {
+      backlink.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        
+        const href = backlink.getAttribute('href');
+        
+        if (href) {
+          
+          const target = document.querySelector(href);
+          
+          if (target) {
+            
+            target.scrollIntoView({ behavior: 'smooth' });
+            
+            
+            target.classList.add('footnote-highlight');
+            setTimeout(function() {
+              target.classList.remove('footnote-highlight');
+            }, 2000);
+          }
+        }
+      });
+    });
+  });
+</script>
+
+
+</head>
+<body class="flex flex-col bg-gray-50 font-bilingual">
+  <header class="fixed top-0 left-0 z-30 w-full bg-white shadow-sm">
+    <div class="w-full max-w-4xl mx-auto px-6 overflow-x-auto sm:overflow-visible">
+      <div class="flex items-center justify-between py-3">
+  <div class="text-lg sm:text-xl font-bold flex-shrink-0 max-w-[40%] sm:max-w-md truncate">
+    <a href="/" class="text-current hover:text-blue-600 transition-colors no-underline">
+      sunCityDaa Website
+    </a>
+  </div>
+  
+  <nav class="flex justify-end w-full whitespace-nowrap">
+    <ul class="flex flex-row items-center space-x-2 sm:space-x-4 md:space-x-6 py-2">
+    <li class="text-gray-600 hover:text-gray-900 text-base sm:text-lg">
+      <a
+        class="px-2 py-1 sm:px-3 sm:py-2 rounded hover:bg-gray-100 transition-colors" href="/">Home</a>
+    </li>
+    <li class="text-gray-600 hover:text-gray-900 text-base sm:text-lg">
+      <a
+        class="px-2 py-1 sm:px-3 sm:py-2 rounded hover:bg-gray-100 transition-colors" aria-current="true" class="ancestor font-semibold" href="/posts/">Posts</a>
+    </li>
+    <li class="text-gray-600 hover:text-gray-900 text-base sm:text-lg">
+      <a
+        class="px-2 py-1 sm:px-3 sm:py-2 rounded hover:bg-gray-100 transition-colors" href="/llm-viz/">LLM Viz</a>
+    </li>
+    <li class="text-gray-600 hover:text-gray-900 text-base sm:text-lg">
+      <a
+        class="px-2 py-1 sm:px-3 sm:py-2 rounded hover:bg-gray-100 transition-colors" href="/tags/">Tags</a>
+    </li>
+    <li class="text-gray-600 hover:text-gray-900 text-base sm:text-lg">
+      <a
+        class="px-2 py-1 sm:px-3 sm:py-2 rounded hover:bg-gray-100 transition-colors">About</a>
+    </li>
+    </ul>
+  </nav>
+
+</div>
+    </div>
+  </header>
+  
+  <div class="flex-1 flex flex-col min-h-screen pt-24">
+    <main class="flex-1 w-full max-w-4xl mx-auto px-6 overflow-x-auto sm:overflow-visible">
+      
+  <article class="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+    <header class="p-8 border-b border-gray-100 relative overflow-hidden">
+      
+      <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-50 to-transparent rounded-full opacity-70 -z-0 blur-2xl transform translate-x-1/4 -translate-y-1/4"></div>
+      
+      
+      
+      <div class="mb-3 flex">
+        
+        <a href="/categories/%E9%80%86%E5%90%91%E5%B7%A5%E7%A8%8B" class="text-xs inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
+          逆向工程
+        </a>
+        
+      </div>
+      
+      
+      <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 relative">用 REA &#43; Craft Anything 逆向并复刻 LLM 3D 可视化（bbycroft.net/llm）</h1>
+      
+      <div class="flex flex-wrap items-center text-sm text-gray-500 gap-4 relative">
+        
+        
+        
+        <time datetime="2026-11-16T10:00:00&#43;08:00" class="flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          2026-11-16
+        </time>
+        
+        
+        <span class="flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          43 min read
+        </span>
+
+        
+        <span id="busuanzi_container_page_pv" class="inline-flex items-center whitespace-nowrap">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-gray-400 inline-block flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+          </svg><span class="whitespace-nowrap">Page Views <span id="busuanzi_value_page_pv"></span></span>
+        </span>
+      </div>
+    </header>
+
+    <div class="p-8 prose prose-sm sm:prose lg:prose-lg max-w-none">
+      <blockquote>
+<p><strong>在线体验 👉 <a href="/llm-viz/">/llm-viz/</a></strong>　｜　原站：<a href="https://bbycroft.net/llm">https://bbycroft.net/llm</a></p>
+</blockquote>
+<p>Brendan Bycroft 的 <a href="https://bbycroft.net/llm">LLM Visualization</a> 是我见过讲 GPT 内部结构最直观的作品：它把一个真实的小型 GPT 的每一个权重、每一个中间结果都画成 3D 空间里的小方块，配合逐章讲解，一步一步展示一次推理是怎么完成的。</p>
+<p>这篇文章完整记录了我做的一件事：<strong>用两个开源逆向工具 <a href="https://github.com/morluto/rea">REA</a> 和 <a href="https://github.com/storytold/craft-anything">Craft Anything</a> 对这个网站做逆向分析（RE），然后根据分析结果，用纯 JavaScript + WebGL2 从零写一个复刻版，部署到本博客。</strong></p>
+<p>复刻版的特点：</p>
+<ul>
+<li><strong>真实推理</strong>：浏览器里用纯 JS 跑 nano-gpt（3 层、3 头、48 维）的完整前向计算，与 PyTorch 参考激活值逐层比对，最大误差 1.9×10⁻⁶。</li>
+<li><strong>近 12 万个格子</strong>：nano-gpt 的每一个权重和激活值（共 192 个张量、119,509 个数）都是一个 3D 方块，颜色表示数值正负和大小，鼠标悬停可以看到具体数字。</li>
+<li><strong>11 章中文讲解</strong>：简介 → 预备知识 → 嵌入 → 层归一化 → 自注意力 → 投影 → MLP → Transformer 块 → Softmax → 输出 → 规模对比，每章自动飞到对应位置，并能播放&quot;逐列计算&quot;的动画。</li>
+<li><strong>可交互</strong>：可以修改输入字母重新推理；可以飞到按真实比例绘制的 GPT-2 small / XL、GPT-3 旁边做规模对比。</li>
+<li><strong>零依赖、零构建</strong>：一个 <code>index.html</code> + 5 个 ES 模块，直接作为 Hugo 静态文件发布。</li>
+</ul>
+<p><img src="rebuild-attn.png" alt="复刻版：自注意力章节"></p>
+<hr>
+<h2 id="目录">目录</h2>
+<ol>
+<li><a href="#1-%E4%B8%A4%E4%B8%AA%E5%B7%A5%E5%85%B7%E6%98%AF%E4%BB%80%E4%B9%88">两个工具是什么</a></li>
+<li><a href="#2-%E5%87%86%E5%A4%87%E7%8E%AF%E5%A2%83%E6%B2%A1%E6%9C%89-sudo-%E4%B9%9F%E8%83%BD%E8%B7%91">准备环境（没有 sudo 也能跑）</a></li>
+<li><a href="#3-%E7%94%A8-rea-%E5%88%86%E6%9E%90%E7%BA%BF%E4%B8%8A%E9%A1%B5%E9%9D%A2">用 REA 分析线上页面</a></li>
+<li><a href="#4-%E7%94%A8-craft-anything-%E8%BF%98%E5%8E%9F%E6%BA%90%E7%A0%81">用 Craft Anything 还原源码</a></li>
+<li><a href="#5-%E9%80%86%E5%90%91%E5%BE%97%E5%88%B0%E7%9A%84%E5%85%B3%E9%94%AE%E4%BA%8B%E5%AE%9E">逆向得到的关键事实</a></li>
+<li><a href="#6-%E5%A4%8D%E5%88%BB%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1">复刻：架构设计</a></li>
+<li><a href="#7-%E5%A4%8D%E5%88%BB%E6%8E%A8%E7%90%86%E5%BC%95%E6%93%8E%E4%B8%8E%E6%95%B0%E5%80%BC%E6%A0%A1%E9%AA%8C">复刻：推理引擎与数值校验</a></li>
+<li><a href="#8-%E5%A4%8D%E5%88%BB3d-%E5%B8%83%E5%B1%80%E4%B8%8E%E6%B8%B2%E6%9F%93">复刻：3D 布局与渲染</a></li>
+<li><a href="#9-%E5%A4%8D%E5%88%BB%E8%AE%B2%E8%A7%A3%E7%B3%BB%E7%BB%9F%E4%B8%8E%E4%BA%A4%E4%BA%92">复刻：讲解系统与交互</a></li>
+<li><a href="#10-%E6%95%88%E6%9E%9C%E5%AF%B9%E6%AF%94%E4%B8%8E%E5%B7%AE%E5%BC%82">效果对比与差异</a></li>
+<li><a href="#11-%E5%A6%82%E4%BD%95%E5%9C%A8%E6%9C%AC%E5%9C%B0%E8%BF%90%E8%A1%8C%E4%BF%AE%E6%94%B9%E4%B8%8E%E9%83%A8%E7%BD%B2">如何在本地运行、修改与部署</a></li>
+<li><a href="#12-%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95">踩坑记录</a></li>
+<li><a href="#13-%E7%89%88%E6%9D%83%E4%B8%8E%E8%87%B4%E8%B0%A2">版权与致谢</a></li>
+</ol>
+<hr>
+<h2 id="1-两个工具是什么">1. 两个工具是什么</h2>
+<h3 id="reareverse-engineer-anything">REA（Reverse Engineer Anything）</h3>
+<ul>
+<li>仓库：<a href="https://github.com/morluto/rea">https://github.com/morluto/rea</a>，npm 包 <code>rea-agents</code>，本文使用 <strong>v6.9.0</strong>。</li>
+<li>定位：一个 <strong>MCP 服务器 + 命令行工具</strong>，给 AI Agent（Claude Code、Codex、Cursor 等）提供逆向工程能力，覆盖原生二进制、JavaScript/Electron、.NET、Android、网站等。</li>
+<li>特点：每个结论都以 <strong>Evidence（证据记录）</strong> 的形式返回，包含置信度（<code>observed</code> / <code>derived</code>）、覆盖范围和局限性说明。分析网站时，它通过 <strong>Chrome DevTools Protocol（CDP）</strong> 连接一个本地浏览器，被动地抓取页面加载的脚本并做静态分析，<strong>不会执行</strong>抓到的 JS。</li>
+</ul>
+<h3 id="craft-anything">Craft Anything</h3>
+<ul>
+<li>仓库：<a href="https://github.com/storytold/craft-anything">https://github.com/storytold/craft-anything</a>，本文使用 <strong>v0.6.1</strong> Linux 发行包。</li>
+<li>定位：一个纯 Rust 写的逆向 + 复刻引擎（有桌面应用、CLI 和 MCP 三种形态，共 320 个工具）。它的完整流程是&quot;研究原版 → 让编码 Agent 构建新项目 → 与原版对比检查 → 迭代&quot;。</li>
+<li>两种模式，这一点很重要：
+<ul>
+<li><strong>Clean room（净室，默认）</strong>：只研究访客能看到的东西（截图、DOM、网络请求），<strong>绝不读取原版的代码</strong>。适合原版代码版权不明确的场景。</li>
+<li><strong>Deep（深度）</strong>：允许读取、反混淆原版代码。</li>
+</ul>
+</li>
+</ul>
+<p>两个工具的分工：<strong>REA 负责&quot;在线观察 + 取证&quot;</strong>（连上浏览器看页面加载了什么、调用了什么接口、用了什么框架），<strong>Craft Anything 负责&quot;离线深挖&quot;</strong>（把压缩后的打包代码还原成可读源码、构建应用依赖图）。</p>
+<hr>
+<h2 id="2-准备环境没有-sudo-也能跑">2. 准备环境（没有 sudo 也能跑）</h2>
+<p>我的环境是 WSL2 下的 Ubuntu 24.04，有 Node.js 22，但<strong>没有 sudo、没有 Rust、没有浏览器</strong>。以下是全部准备步骤，所有东西都装在临时目录里，不污染系统。</p>
+<h3 id="21-安装-rea">2.1 安装 REA</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mkdir -p /tmp/rea-dl/rea <span style="color:#f92672">&amp;&amp;</span> cd /tmp/rea-dl/rea
+</span></span><span style="display:flex;"><span>npm init -y <span style="color:#f92672">&amp;&amp;</span> npm install rea-agents
+</span></span><span style="display:flex;"><span>npx rea --help          <span style="color:#75715e"># 列出全部命令</span>
+</span></span></code></pre></div><h3 id="22-安装-craft-anything用官方预编译包免装-rust">2.2 安装 Craft Anything（用官方预编译包，免装 Rust）</h3>
+<p>源码构建需要 Rust 1.97+，这里直接下载 Release 里的 Linux 包，并用 <code>SHA256SUMS.txt</code> 校验完整性：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>v<span style="color:#f92672">=</span>0.6.1
+</span></span><span style="display:flex;"><span>curl -fLO <span style="color:#e6db74">&#34;https://github.com/storytold/craft-anything/releases/download/v</span>$v<span style="color:#e6db74">/craft-anything-</span>$v<span style="color:#e6db74">-linux-x86_64.tar.gz&#34;</span>
+</span></span><span style="display:flex;"><span>curl -fLO <span style="color:#e6db74">&#34;https://github.com/storytold/craft-anything/releases/download/v</span>$v<span style="color:#e6db74">/SHA256SUMS.txt&#34;</span>
+</span></span><span style="display:flex;"><span>grep <span style="color:#e6db74">&#34;linux-x86_64.tar.gz</span>$<span style="color:#e6db74">&#34;</span> SHA256SUMS.txt | sha256sum -c -     <span style="color:#75715e"># 输出 OK</span>
+</span></span><span style="display:flex;"><span>tar xzf craft-anything-$v-linux-x86_64.tar.gz
+</span></span><span style="display:flex;"><span>CA<span style="color:#f92672">=</span>$PWD/craft-anything-$v-linux-x86_64/bin/craft-anything-cli
+</span></span><span style="display:flex;"><span>$CA --version      <span style="color:#75715e"># craft-anything-cli 0.6.1</span>
+</span></span><span style="display:flex;"><span>$CA doctor         <span style="color:#75715e"># 检查可用的引擎（Ghidra、Chromium、Frida 等，均为可选）</span>
+</span></span></code></pre></div><h3 id="23-准备一个可被-cdp-连接的无头浏览器">2.3 准备一个可被 CDP 连接的无头浏览器</h3>
+<p>两个工具分析网站都需要 Chromium。用 Playwright 下载（不需要 root）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>npx playwright install chromium
+</span></span></code></pre></div><p>直接运行会报缺系统库（<code>libnspr4.so</code>、<code>libnss3.so</code>、<code>libasound.so.2</code>）。没有 sudo 装不了，但可以<strong>只下载 deb 包、解压到本地目录</strong>，再用 <code>LD_LIBRARY_PATH</code> 指过去：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mkdir -p /tmp/rea-dl/libs <span style="color:#f92672">&amp;&amp;</span> cd /tmp/rea-dl/libs
+</span></span><span style="display:flex;"><span>apt-get download libnspr4 libnss3 libasound2t64
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> d in *.deb; <span style="color:#66d9ef">do</span> dpkg-deb -x $d root; <span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>export LD_LIBRARY_PATH<span style="color:#f92672">=</span>/tmp/rea-dl/libs/root/usr/lib/x86_64-linux-gnu
+</span></span></code></pre></div><p>页面里的中文需要字体，同样的办法弄一个文泉驿微米黑，配一个只在本进程生效的 fontconfig：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>apt-get download fonts-wqy-microhei <span style="color:#f92672">&amp;&amp;</span> dpkg-deb -x fonts-wqy-microhei_*.deb fontroot
+</span></span><span style="display:flex;"><span>cat &gt; /tmp/rea-dl/fontconf/fonts.conf <span style="color:#e6db74">&lt;&lt;&#39;EOF&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&lt;?xml version=&#34;1.0&#34;?&gt;&lt;!DOCTYPE fontconfig SYSTEM &#34;fonts.dtd&#34;&gt;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&lt;fontconfig&gt;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  &lt;include ignore_missing=&#34;yes&#34;&gt;/etc/fonts/fonts.conf&lt;/include&gt;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  &lt;dir&gt;/tmp/rea-dl/libs/fontroot/usr/share/fonts&lt;/dir&gt;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  &lt;cachedir&gt;/tmp/rea-dl/fontconf/cache&lt;/cachedir&gt;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&lt;/fontconfig&gt;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span><span style="display:flex;"><span>export FONTCONFIG_FILE<span style="color:#f92672">=</span>/tmp/rea-dl/fontconf/fonts.conf
+</span></span></code></pre></div><p>最后启动无头浏览器，开启远程调试端口。原站是 WebGL 应用，没有 GPU 时用 SwiftShader 软件渲染：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>chrome-headless-shell --remote-debugging-port<span style="color:#f92672">=</span><span style="color:#ae81ff">9222</span> --no-sandbox <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --use-angle<span style="color:#f92672">=</span>swiftshader --enable-unsafe-swiftshader <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --window-size<span style="color:#f92672">=</span>1600,1000 --user-data-dir<span style="color:#f92672">=</span>/tmp/rea-dl/chprof about:blank
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 打开目标页面</span>
+</span></span><span style="display:flex;"><span>curl -X PUT <span style="color:#e6db74">&#34;http://127.0.0.1:9222/json/new?https://bbycroft.net/llm&#34;</span>
+</span></span></code></pre></div><hr>
+<h2 id="3-用-rea-分析线上页面">3. 用 REA 分析线上页面</h2>
+<h3 id="31-列出浏览器标签页">3.1 列出浏览器标签页</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>npx rea list-browser-targets http://127.0.0.1:9222
+</span></span></code></pre></div><p>输出（节选）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>predicate_type: rea.browser-target-list
+</span></span><span style="display:flex;"><span>targets[1]{target_id,type,title,url,origin,attached}:
+</span></span><span style="display:flex;"><span>  81303538EE0A82659ADA333A93D3E362,page,LLM Visualization,&#34;https://bbycroft.net/llm&#34;,&#34;https://bbycroft.net&#34;,null
+</span></span><span style="display:flex;"><span>confidence: observed
+</span></span></code></pre></div><h3 id="32-抓取并静态分析页面的-js-打包">3.2 抓取并静态分析页面的 JS 打包</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>npx rea analyze-web-bundle http://127.0.0.1:9222 81303538EE0A82659ADA333A93D3E362 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --detail summary <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --evidence_output /tmp/rea-dl/evidence/web-bundle.json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --view <span style="color:#e6db74">&#39;{&#34;kind&#34;:&#34;web-bundle&#34;,&#34;collection&#34;:&#34;summary&#34;}&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --observation-ms <span style="color:#ae81ff">8000</span>
+</span></span></code></pre></div><blockquote>
+<p><strong>关于 <code>--view</code> 参数</strong>：帮助文本只写了&quot;JSON web-bundle … view&quot;，我试了三次才拼对。REA 的错误信息很友好，每次都会精确指出缺哪个字段、合法值有哪些：先提示 <code>view</code> 必须是 JSON，再提示缺 <code>collection</code>（可选 <code>endpoints / inferences / summary</code>），最后提示 <code>kind</code> 只能是 <code>javascript-routes</code> 或 <code>web-bundle</code>。</p>
+</blockquote>
+<p>摘要结果：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>scripts_observed: 18      scripts_analyzed: 18
+</span></span><span style="display:flex;"><span>counts: { endpoints: 2, inferences: 3, chunks: 18, routes: 0 }
+</span></span><span style="display:flex;"><span>completeness: { status: partial, parsed_scripts: 17, visited_ast_nodes: 176226 }
+</span></span><span style="display:flex;"><span>source_unknowns:
+</span></span><span style="display:flex;"><span>  - javascript_analysis: 229KB 的 2i4z85m0wel5b.js 达到 30s 单脚本分析时限
+</span></span></code></pre></div><p>完整的证据包（24KB JSON）里能读到更具体的信息：</p>
+<table>
+  <thead>
+      <tr>
+          <th>类别</th>
+          <th>发现</th>
+          <th>置信度</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>框架指纹</td>
+          <td><strong>Next.js</strong>（<code>next-runtime</code> 检测器，在 turbopack 运行时与内联脚本中各命中一次）</td>
+          <td>high</td>
+      </tr>
+      <tr>
+          <td>框架指纹</td>
+          <td><strong>React</strong>（<code>react-runtime</code> 检测器）</td>
+          <td>medium</td>
+      </tr>
+      <tr>
+          <td>网络请求</td>
+          <td><code>fetch(&quot;fonts/font-def.json&quot;)</code> —— 3D 场景里的文字用的位图字体定义</td>
+          <td>observed</td>
+      </tr>
+      <tr>
+          <td>网络请求</td>
+          <td><code>fetch(&quot;/native.wasm&quot;)</code> —— 一个 WebAssembly 模块</td>
+          <td>observed</td>
+      </tr>
+      <tr>
+          <td>路由</td>
+          <td>只有 <code>/llm</code> 一个页面</td>
+          <td>observed</td>
+      </tr>
+      <tr>
+          <td>打包产物</td>
+          <td>18 个 chunk，其中 <code>0cv-1jbwlp9nd.js</code>（173KB）和 <code>27c2x5rzai5hi.js</code>（76KB）是可视化本体</td>
+          <td>observed</td>
+      </tr>
+  </tbody>
+</table>
+<p>REA 特别标注了局限性：静态分析<strong>不执行</strong>脚本，所以运行时拼出来的 URL 看不到——这一点后面会印证：真正的模型权重文件名就是在运行时拼接的，REA 这一步没找到。</p>
+<h3 id="33-截图存证">3.3 截图存证</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>npx rea capture-web-screenshot http://127.0.0.1:9222 81303538EE0A82659ADA333A93D3E362 --format json
+</span></span></code></pre></div><p>返回的 JSON 里 <code>data_base64</code> 字段就是 PNG，并附带 sha256，用作后面对比的&quot;基准图&quot;：</p>
+<p><img src="original-intro.png" alt="原站：简介页"></p>
+<hr>
+<h2 id="4-用-craft-anything-还原源码">4. 用 Craft Anything 还原源码</h2>
+<p>先把页面引用的 18 个 JS/CSS 文件镜像到本地（放在单独的目录里，只读取、不执行）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mkdir -p /tmp/rea-dl/site <span style="color:#f92672">&amp;&amp;</span> cd /tmp/rea-dl/site
+</span></span><span style="display:flex;"><span>curl -sSL https://bbycroft.net/llm -o llm.html
+</span></span><span style="display:flex;"><span>grep -oE <span style="color:#e6db74">&#39;/_next/static/[^&#34;]+\.(js|css)&#39;</span> llm.html | sort -u | <span style="color:#66d9ef">while</span> read p; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  mkdir -p <span style="color:#e6db74">&#34;.</span><span style="color:#66d9ef">$(</span>dirname $p<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>; curl -sSL <span style="color:#e6db74">&#34;https://bbycroft.net</span>$p<span style="color:#e6db74">&#34;</span> -o <span style="color:#e6db74">&#34;.</span>$p<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span></code></pre></div><h3 id="41-净室模式的拒绝">4.1 净室模式的拒绝</h3>
+<p>第一次直接运行：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$CA js-app-map --input-path /tmp/rea-dl/site
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Error (feature_missing): This looks inside the original (its code, files or page source),
+</span></span><span style="display:flex;"><span>which Clean room never does.
+</span></span><span style="display:flex;"><span>What to do: Turn on Deep mode ... or `--deep` on the CLI.
+</span></span></code></pre></div><p>这是 Craft Anything 的设计：<strong>默认的净室模式不读原版代码</strong>。要不要开 Deep 模式，取决于原版的许可证。于是先查许可证：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl -sSL https://raw.githubusercontent.com/bbycroft/llm-viz/main/README.md | grep -i license
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># **License:** MIT (see LICENSE), except the personal homepage ... and third-party assets (fonts ...)</span>
+</span></span></code></pre></div><p>LLM Visualization 部分是 <strong>MIT 许可证</strong>，允许阅读、修改和再发布（保留版权声明即可）。因此可以合法地开启 Deep 模式做深度分析。不过我仍然决定：<strong>复刻版的所有代码自己从零写，不复制原版代码</strong>，只把逆向得到的&quot;事实&quot;（模型结构、数据格式、章节划分）作为规格。</p>
+<h3 id="42-应用依赖图">4.2 应用依赖图</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$CA --deep js-app-map --input-path /tmp/rea-dl/site --output-format md
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Web app site: 19 source files, 0 IPC channel(s), 0 window(s), 4 endpoint(s), 0 route(s).
+</span></span><span style="display:flex;"><span>Confidence: derived
+</span></span></code></pre></div><p>它输出了 2.5MB 的依赖图（函数、事件处理器、端点之间的边），比如能看出可视化主 chunk <code>27c2x5rzai5hi.js</code> 在第 535 行注册了 <code>wheel</code> 事件（滚轮缩放），<code>1rqx_1qutpsew.js</code> 监听了 <code>window.resize</code>。</p>
+<h3 id="43-还原可读源码">4.3 还原可读源码</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$CA --deep js-sources-restore <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --path /tmp/rea-dl/site/_next/static/chunks <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output-directory /tmp/rea-dl/restored
+</span></span></code></pre></div><p>16 个压缩文件被还原为格式化后的代码，并做了安全的反压缩改写（<code>!0 → true</code>、<code>void 0 → undefined</code>、拆开逗号表达式等），<code>manifest.json</code> 记录每个输出文件的来源和 sha256。例如 <code>3tztgy6ubk_wx.js</code> 做了 239 处改写。还原后的两个核心文件分别有 7,938 行和 2,531 行，可以直接阅读和搜索。</p>
+<hr>
+<h2 id="5-逆向得到的关键事实">5. 逆向得到的关键事实</h2>
+<p>在还原后的源码中搜索，得到了复刻所需的全部规格。</p>
+<h3 id="51-模型配置">5.1 模型配置</h3>
+<p>在 <code>27c2x5rzai5hi.js</code> 中找到初始状态，四个模型的形状一目了然：</p>
+<table>
+  <thead>
+      <tr>
+          <th>模型</th>
+          <th>B</th>
+          <th>T（上下文）</th>
+          <th>C（维度）</th>
+          <th>头数</th>
+          <th>A（头维度）</th>
+          <th>层数</th>
+          <th>词表</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>nano-gpt</td>
+          <td>1</td>
+          <td>11</td>
+          <td>48</td>
+          <td>3</td>
+          <td>16</td>
+          <td>3</td>
+          <td>3</td>
+      </tr>
+      <tr>
+          <td>GPT-2 (small)</td>
+          <td>1</td>
+          <td>1024</td>
+          <td>768</td>
+          <td>12</td>
+          <td>64</td>
+          <td>12</td>
+          <td>50257</td>
+      </tr>
+      <tr>
+          <td>GPT-2 (XL)</td>
+          <td>1</td>
+          <td>1024</td>
+          <td>1600</td>
+          <td>25</td>
+          <td>64</td>
+          <td>48</td>
+          <td>50257</td>
+      </tr>
+      <tr>
+          <td>GPT-3</td>
+          <td>1</td>
+          <td>1024</td>
+          <td>12288</td>
+          <td>96</td>
+          <td>128</td>
+          <td>96</td>
+          <td>50257</td>
+      </tr>
+  </tbody>
+</table>
+<p>另外还能看到：大模型沿 x 轴按 <code>Vec3(10000,0,0)</code> 的倍数偏移摆放；只有 nano-gpt 有真实权重，其余只画形状。</p>
+<h3 id="52-权重文件rea-没找到的那个">5.2 权重文件——REA 没找到的那个</h3>
+<p>在 React 的 <code>useEffect</code> 里有这样一段（已还原）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-js" data-lang="js"><span style="display:flex;"><span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">t</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">ew</span>(<span style="color:#e6db74">&#34;gpt-nano-sort-t0-partials.json&#34;</span>), <span style="color:#a6e22e">o</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">ew</span>(<span style="color:#e6db74">&#34;gpt-nano-sort-model.json&#34;</span>), ...
+</span></span></code></pre></div><p>文件名是作为参数传给一个 fetch 包装函数的，所以 REA 的静态端点检测（识别的是 <code>fetch(&quot;...&quot;)</code> 直接调用）没有把它列为端点——正好印证了 REA 自己声明的局限。下载下来：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>gpt-nano-sort-model.json        466,124 字节
+</span></span><span style="display:flex;"><span>gpt-nano-sort-t0-partials.json  247,846 字节
+</span></span></code></pre></div><p><code>gpt-nano-sort-model.json</code> 的格式：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;config&#34;</span>: { <span style="color:#f92672">&#34;model_type&#34;</span>: <span style="color:#e6db74">&#34;gpt-nano&#34;</span>, <span style="color:#f92672">&#34;n_layer&#34;</span>: <span style="color:#ae81ff">3</span>, <span style="color:#f92672">&#34;n_head&#34;</span>: <span style="color:#ae81ff">3</span>, <span style="color:#f92672">&#34;n_embd&#34;</span>: <span style="color:#ae81ff">48</span>,
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">&#34;vocab_size&#34;</span>: <span style="color:#ae81ff">3</span>, <span style="color:#f92672">&#34;block_size&#34;</span>: <span style="color:#ae81ff">11</span>, <span style="color:#960050;background-color:#1e0010">...</span> },
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;transformer.wte.weight&#34;</span>: { <span style="color:#f92672">&#34;shape&#34;</span>: [<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">48</span>], <span style="color:#f92672">&#34;dtype&#34;</span>: <span style="color:#e6db74">&#34;torch.float32&#34;</span>, <span style="color:#f92672">&#34;data&#34;</span>: <span style="color:#e6db74">&#34;&lt;base64&gt;&#34;</span> },
+</span></span><span style="display:flex;"><span>  <span style="color:#960050;background-color:#1e0010">...</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>就是 PyTorch <code>state_dict</code> 的直接导出：44 个张量，每个都是 base64 编码的小端 float32。张量命名与 Karpathy 的 <a href="https://github.com/karpathy/minGPT">minGPT</a> 完全一致——原项目 README 也说明了，这正是 minGPT 自带的&quot;字母排序&quot;示例模型。</p>
+<p><code>gpt-nano-sort-t0-partials.json</code> 更有价值：它保存了 <strong>3 条输入序列在 PyTorch 中跑出来的所有中间激活值</strong>（<code>x</code>、<code>ln1</code>、<code>q/k/v</code>、<code>att</code>、<code>attSm</code>、<code>block0~2</code>、<code>ln_f</code>、<code>lm_head</code>、<code>probs</code> 等）。这成了我校验自己推理引擎的&quot;标准答案&quot;。</p>
+<h3 id="53-参数量的小谜题">5.3 参数量的小谜题</h3>
+<p>原站显示 <code>n_params = 85,584</code>。我把所有张量加起来（排除 <code>attn.bias</code>——那是因果掩码缓冲区，不是参数）得到 <strong>85,728</strong>，差了 144 = 3 × 48，正好是 <code>lm_head.weight</code> 的大小。原因是 minGPT 统计参数量时不计 <code>lm_head</code>。复刻版沿用 85,584 的口径，并在规模对比页按同样公式计算大模型：</p>
+<pre tabindex="0"><code>params = V·C + T·C + L·(12C² + 13C) + 2C
+</code></pre><p>GPT-2 small 得 124,439,808——与公认的&quot;124M&quot;吻合，说明公式正确。</p>
+<h3 id="54-章节与渲染结构">5.4 章节与渲染结构</h3>
+<ul>
+<li>章节枚举：<code>Intro_Intro, Intro_Prelim, Input_Detail_Embedding, Input_Detail_LayerNorm, Input_Detail_SelfAttention, Input_Detail_Projection, Input_Detail_Mlp, Input_Detail_Transformer, Input_Detail_Softmax, Input_Detail_Output</code>，共 10 章。</li>
+<li>布局生成函数 <code>genGptModelLayout(shape)</code> 返回 <code>cubes</code> 列表，格子边长 <code>cell: 1.5</code>。张量名依次为：Tokens、Token Embed、Position Embed、Input Embed、LN Agg: μ, σ、γ、β、Layer Norm、Q/K/V Weights、Q/K/V Bias、Q/K/V vectors、Attention Matrix、Attn Matrix Softmax、V Output、V Output Combined、Projection Weights/Bias、Attention Output、Attention Residual、MLP Weights/Bias、MLP、MLP Activation、MLP Projection Weights/Bias、MLP Result、MLP Residual、LM Head Weights、Logits、SM Agg、Logits Softmax。</li>
+<li>渲染分多个 pass：<code>Opaque</code>（不透明方块）、<code>Arrows</code>（数据流箭头）、<code>Overlay</code>、<code>Overlay2D</code>（文字）。</li>
+<li>推理有两套实现：WebGL 着色器（<code>gptGpuModel</code>）和 WASM（<code>native.wasm</code> 里的 <code>wasm_create_model / wasm_run_model</code>）。</li>
+</ul>
+<hr>
+<h2 id="6-复刻架构设计">6. 复刻：架构设计</h2>
+<p>目标：<strong>不依赖任何框架和构建工具</strong>，作为 Hugo 的静态文件直接发布，所有代码可读、可改。</p>
+<pre tabindex="0"><code>static/llm-viz/
+├── index.html              页面骨架：顶栏、左侧讲解面板、右侧 3D 视图
+├── style.css               样式（含窄屏上下布局）
+├── js/
+│   ├── gpt.js              GPT 前向推理（纯 JS，浏览器/Node 通用）
+│   ├── layout.js           把每个张量排布成 3D 空间里的&#34;格子板&#34;
+│   ├── renderer.js         WebGL2 实例化渲染 + 轨道相机 + 拾取射线
+│   ├── walkthrough.js      11 章讲解内容（中文，自己撰写）
+│   └── main.js             把以上模块串起来：UI、交互、动画、标签
+├── data/
+│   └── gpt-nano-sort-model.json   训练好的权重（来自原项目，MIT）
+├── LICENSE-THIRD-PARTY.md  上游许可证
+└── README.md               模块说明
+tools/llm-viz/
+├── verify-gpt.mjs          用参考激活值逐层校验推理结果
+└── gpt-nano-sort-t0-partials.json
+</code></pre><p>数据流：</p>
+<pre tabindex="0"><code>权重 JSON ──loadModel──▶ model ──generateSorted(input)──▶ 11 个 token + 所有中间激活
+                                                              │
+                         genLayout(shape) ──▶ 张量格子板 ◀──bindActs──┘
+                                                │
+                              Renderer.build ──▶ 121,249 个立方体实例 ──▶ WebGL2
+                                                 （nano-gpt 119,509 格 + 大模型实心盒）
+</code></pre><hr>
+<h2 id="7-复刻推理引擎与数值校验">7. 复刻：推理引擎与数值校验</h2>
+<p><code>gpt.js</code> 实现了 minGPT 的完整前向计算，每一步都保存中间结果供可视化使用：</p>
+<ol>
+<li><strong>嵌入</strong>：<code>x = wte[idx] + wpe[pos]</code></li>
+<li>每个 block：
+<ul>
+<li><code>ln1 = LayerNorm(x)</code>（同时保存每列的 μ 和 1/σ）</li>
+<li><code>qkv = ln1 · W_attnᵀ + b</code>，按 q|k|v、按头切成 3 × 3 个 [11, 16] 矩阵</li>
+<li><code>att = q·kᵀ / √16</code>，上三角置 −∞（因果掩码）</li>
+<li>按行 softmax（先减最大值保证数值稳定），乘 V 得到每个头的输出</li>
+<li>拼接三个头 → <code>c_proj</code> 投影 → 残差相加</li>
+<li><code>ln2</code> → <code>c_fc</code>（48→192）→ GELU（tanh 近似）→ <code>c_proj</code>（192→48）→ 残差相加</li>
+</ul>
+</li>
+<li><code>ln_f</code> → <code>lm_head</code>（48→3）→ softmax</li>
+</ol>
+<p><strong>自回归排序</strong>：输入 6 个字母，贪心地逐个生成 6 个输出。最后一次前向的序列长度正好是 11（= block_size），可视化展示的就是这一次。</p>
+<p><strong>校验</strong>：<code>tools/llm-viz/verify-gpt.mjs</code> 读入原站的参考激活值，对 3 条序列逐层比对：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ node tools/llm-viz/verify-gpt.mjs
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>序列 0: A A C B A B A A A A A
+</span></span><span style="display:flex;"><span>OK   x (tok+pos embed)      max|Δ| = 0.00e+0
+</span></span><span style="display:flex;"><span>OK   block0 output          max|Δ| = 4.17e-7
+</span></span><span style="display:flex;"><span>OK   block1 output          max|Δ| = 3.58e-7
+</span></span><span style="display:flex;"><span>OK   block2 output          max|Δ| = 1.19e-6
+</span></span><span style="display:flex;"><span>OK   ln_f                   max|Δ| = 7.15e-7
+</span></span><span style="display:flex;"><span>OK   lm_head (logits)       max|Δ| = 1.91e-6
+</span></span><span style="display:flex;"><span>OK   probs                  max|Δ| = 5.96e-8
+</span></span><span style="display:flex;"><span>OK   block0 head0 attSm     max|Δ| = 5.96e-8
+</span></span><span style="display:flex;"><span>...（序列 1、2 同样全部 OK）
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>参数量：含 lm_head = 85728，不含 lm_head（minGPT/原站口径）= 85584
+</span></span><span style="display:flex;"><span>排序演示：CBABBC → ABBBCC
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>最大误差 1.91e-6：全部通过
+</span></span></code></pre></div><p>30 项比对全部通过，误差都在 float32 的舍入范围内（JS 中间计算用的是 float64，存储用 float32）。</p>
+<hr>
+<h2 id="8-复刻3d-布局与渲染">8. 复刻：3D 布局与渲染</h2>
+<h3 id="81-布局约定">8.1 布局约定</h3>
+<ul>
+<li>坐标系：x 向右、y 向上（模型自上而下堆叠）、z 朝向观察者，1 个格子 = 1 个单位。</li>
+<li><strong>激活值</strong> <code>[T, n]</code> 画成 T 列 × n 行：<strong>每一列就是一个 token</strong>，这和原站一致，看图时只要记住&quot;一列一个字母&quot;。</li>
+<li><strong>权重</strong>画在它所作用的激活值的左侧，行对应输出维度、列对应输入维度。</li>
+<li>注意力部分 3 个头<strong>水平并排</strong>，每个头自上而下是：Q/K/V 权重 + 偏置 + 向量 → 注意力分数（11×11）→ softmax 权重 → 加权 V 输出。</li>
+<li>统计量（LayerNorm 的 μ、1/σ；softmax 的 max、1/Σexp）用紫色小板单独画出，对应原站的 &ldquo;LN Agg&rdquo;、&ldquo;SM Agg&rdquo;。</li>
+</ul>
+<p>nano-gpt 一共 192 个张量、119,509 个格子；加上三个大模型的实心盒子，场景里共 121,249 个立方体实例。</p>
+<h3 id="82-渲染">8.2 渲染</h3>
+<p><code>renderer.js</code> 用 <strong>WebGL2 实例化绘制</strong>：一个单位立方体（24 顶点 / 36 索引）+ 每格一个实例，一次 <code>drawElementsInstanced</code> 画完所有格子。每个实例 56 字节：位置、尺寸、颜色、张量 id、计算顺序。</p>
+<p>两个关键设计：</p>
+<ol>
+<li><strong>颜色在 CPU 上算好</strong>。发散色板：负数 → 橙、0 → 中性色、正数 → 蓝；中性色区分张量类型（权重灰蓝、激活浅绿、统计量浅紫、token 用字母色）。每个张量单独定颜色刻度（绝对值的 98 分位数），避免个别极值把整块颜色&quot;冲淡&quot;。被因果掩码的 −∞ 显示为深灰色。</li>
+<li><strong>逐张量状态放在一张浮点纹理里</strong>。每个张量占一个 RGBA32F texel：亮度（是否属于当前章节）、揭示进度（动画）、高亮。顶点着色器用 <code>texelFetch(张量 id)</code> 读取。切换章节、播放动画时只需更新这张几 KB 的小纹理，12 万个实例的数据完全不用动。</li>
+</ol>
+<p><strong>&ldquo;逐列计算&quot;动画</strong>：每个实例记录自己在张量内的计算顺序（按列优先，0~1），着色器把&quot;顺序 &gt; 揭示进度&quot;的格子压扁成浅色占位，正好在进度前沿的格子加亮成金色——于是能看到结果一列一列地&quot;算出来&rdquo;。</p>
+<p><img src="rebuild-embed-play.png" alt="嵌入章节：播放动画后，x = tok + pos 被一列一列算出"></p>
+<h3 id="83-交互">8.3 交互</h3>
+<ul>
+<li><strong>轨道相机</strong>：左键拖动旋转、右键/Shift 拖动平移、滚轮朝鼠标位置缩放、双指捏合缩放。切换章节时相机根据聚焦张量的包围盒自动计算距离，用三次缓动&quot;飞&quot;过去（距离按对数插值，从远到近的飞行更自然）。</li>
+<li><strong>悬停拾取</strong>：从相机发出射线，与格子所在平面求交，再判断落在哪个张量的哪一格。提示框显示张量名、形状、行列和数值；对注意力矩阵还会说明&quot;第 i 个 token 对第 j 个 token&quot;。</li>
+</ul>
+<p><img src="rebuild-hover.png" alt="悬停在注意力权重矩阵上"></p>
+<ul>
+<li><strong>3D 标签</strong>：张量名、token 字母、预测结果都是 DOM 元素，每帧把锚点投影到屏幕上。根据&quot;每个世界单位对应多少像素&quot;决定是否显示——缩小时只显示大张量的名字，放大后偏置、γ/β 等小张量的名字才出现，避免文字糊成一团。</li>
+</ul>
+<hr>
+<h2 id="9-复刻讲解系统与交互">9. 复刻：讲解系统与交互</h2>
+<p><code>walkthrough.js</code> 里每一章是一个对象：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-js" data-lang="js"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">id</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;attention&#39;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">title</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;自注意力&#39;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">focus</span><span style="color:#f92672">:</span> (<span style="color:#a6e22e">t</span>) =&gt; <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">group</span> <span style="color:#f92672">===</span> <span style="color:#e6db74">&#39;block0&#39;</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#e6db74">/ H\d /</span>.<span style="color:#a6e22e">test</span>(<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">name</span>),   <span style="color:#75715e">// 高亮哪些张量
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#a6e22e">camFocus</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">nameHas</span>(<span style="color:#e6db74">&#39;B0 H0&#39;</span>),                                     <span style="color:#75715e">// 相机对准哪些张量
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#a6e22e">sequence</span><span style="color:#f92672">:</span> [<span style="color:#e6db74">&#39;B0 H0 Q Weights&#39;</span>, <span style="color:#e6db74">&#39;B0 H0 Q vectors&#39;</span>, ...],          <span style="color:#75715e">// 播放动画的计算顺序
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#a6e22e">html</span><span style="color:#f92672">:</span> <span style="color:#e6db74">`&lt;p&gt;自注意力是 Transformer 的核心……&lt;/p&gt;`</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>章节结构与原站一一对应，额外加了&quot;规模对比&quot;。<strong>讲解正文是我自己用中文重新写的</strong>，没有翻译或复制原站的英文。</p>
+<p><strong>输出章节</strong>有一张实时生成的概率表：每一列 A/B/C 的概率条和贪心预测。前 5 列预测的是&quot;输入本身&quot;，模型不关心；从第 5 列开始才是排序答案。</p>
+<p><img src="rebuild-output.png" alt="输出章节"></p>
+<p><strong>规模对比</strong>章节把 GPT-2 small、GPT-2 XL、GPT-3 按真实比例画在 nano-gpt 右侧（为控制实例数，每个张量画成一个实心盒子，多头合并）：</p>
+<p><img src="rebuild-scale.png" alt="规模对比"></p>
+<p>左上角的输入框可以点击字母在 A/B/C 之间切换，或点&quot;随机&quot;，然后&quot;运行&quot;——整个模型的近 12 万个格子会按新的推理结果重新着色，并显示排序是否正确。我用脚本把 6 个字母的<strong>全部 3⁶ = 729 种输入</strong>都跑了一遍，复刻版的推理 <strong>729 / 729 全部排序正确</strong>（例如 <code>BCACAB → AABBCC</code>）。</p>
+<hr>
+<h2 id="10-效果对比与差异">10. 效果对比与差异</h2>
+<table>
+  <thead>
+      <tr>
+          <th>原站</th>
+          <th>复刻版</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><img src="original-attention.png" alt="原站自注意力章节"></td>
+          <td><img src="rebuild-overview.png" alt="复刻版全景"></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>一致的部分</strong>：模型（同一份权重，推理结果数值一致）、张量的种类和排布思路（每列一个 token、权重在左）、章节结构、多模型规模对比、悬停查看数值、相机飞行。</p>
+<p><strong>主动做的不同</strong>：</p>
+<ul>
+<li>全中文讲解，内容重新组织，补充了公式和参数量计算。</li>
+<li>权重 / 激活 / 统计量用不同底色区分，正负用蓝 / 橙双色（原站用单色深浅）。</li>
+<li>推理用纯 JS 在 CPU 上完成（模型只有 8.5 万参数，Node 22 上一次 11 token 的前向约 1.1ms），不需要 WASM 或 GPU 计算着色器。</li>
+<li>可以修改输入并重新推理，并显示&quot;排序是否正确&quot;。</li>
+<li>页面零依赖：HTML + CSS + JS 共约 83KB（未压缩，含大量中文注释）+ 466KB 权重。</li>
+</ul>
+<p><strong>尚未实现（与原站的差距）</strong>：</p>
+<ul>
+<li>原站有<strong>数据流箭头</strong>（绿色曲线，表示哪个张量流向哪个张量）和左上角的 2D 结构示意图，复刻版没有。</li>
+<li>原站的讲解在播放时会<strong>逐句</strong>高亮正文并精确地展示&quot;一个点积&quot;的计算过程（单独抽出一行和一列），复刻版的动画粒度是&quot;一整列&quot;。</li>
+<li>原站对大模型也有更精细的分块绘制，复刻版是每张量一个实心盒子。</li>
+<li>原站支持更深的点击交互（点击方块查看依赖），复刻版只有悬停。</li>
+</ul>
+<p>这些都可以在现有架构上继续加：箭头只需要在 <code>layout.js</code> 里给张量加上依赖关系，再用 <code>renderer.js</code> 的线框管线画曲线即可。</p>
+<hr>
+<h2 id="11-如何在本地运行修改与部署">11. 如何在本地运行、修改与部署</h2>
+<h3 id="只看可视化">只看可视化</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cd static
+</span></span><span style="display:flex;"><span>python3 -m http.server <span style="color:#ae81ff">8000</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 浏览器打开 http://localhost:8000/llm-viz/</span>
+</span></span></code></pre></div><blockquote>
+<p>必须通过 HTTP 访问（<code>file://</code> 下 ES 模块和 <code>fetch</code> 会被浏览器拦截），浏览器需支持 WebGL2（近几年的 Chrome / Edge / Firefox / Safari 都支持）。</p>
+</blockquote>
+<h3 id="修改推理后校验">修改推理后校验</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>node tools/llm-viz/verify-gpt.mjs     <span style="color:#75715e"># 全部 OK 才说明推理没改坏</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 提示：Node 会打印一条 MODULE_TYPELESS_PACKAGE_JSON 警告（gpt.js 是 ES 模块），无害，可忽略</span>
+</span></span></code></pre></div><p>页面加载后在浏览器控制台里有一个调试入口 <code>window.__llmviz</code>，例如：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-js" data-lang="js"><span style="display:flex;"><span><span style="color:#a6e22e">__llmviz</span>.<span style="color:#a6e22e">setInput</span>([<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>])   <span style="color:#75715e">// 换输入并重新推理
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">__llmviz</span>.<span style="color:#a6e22e">gotoChapter</span>(<span style="color:#ae81ff">4</span>)                 <span style="color:#75715e">// 跳到第 5 章
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">__llmviz</span>.<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">gen</span>.<span style="color:#a6e22e">output</span>                 <span style="color:#75715e">// 查看输出
+</span></span></span></code></pre></div><h3 id="改讲解内容">改讲解内容</h3>
+<p>只需要编辑 <code>static/llm-viz/js/walkthrough.js</code>：改 <code>html</code> 改文字，改 <code>focus</code> / <code>camFocus</code> 改高亮和相机，改 <code>sequence</code> 改动画顺序（填张量的 <code>name</code>，可以在 <code>layout.js</code> 里查到）。</p>
+<h3 id="部署到本站">部署到本站</h3>
+<p>本站的 GitHub Actions（<code>.github/workflows/deploy.yml</code>）<strong>直接上传仓库里的 <code>public/</code> 目录</strong>，不会在 CI 里运行 Hugo。所以改完内容后要先在本地生成：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Hugo 需要 extended 版本；主题用的是 Tailwind v4，需要 tailwindcss 命令行</span>
+</span></span><span style="display:flex;"><span>npm install -g @tailwindcss/cli@4        <span style="color:#75715e"># 或装在任意目录后把 node_modules/.bin 加进 PATH</span>
+</span></span><span style="display:flex;"><span>hugo --cleanDestinationDir              <span style="color:#75715e"># 重新生成 public/</span>
+</span></span><span style="display:flex;"><span>git add . <span style="color:#f92672">&amp;&amp;</span> git commit -m <span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#f92672">&amp;&amp;</span> git push
+</span></span></code></pre></div><p><code>static/llm-viz/</code> 会被 Hugo 原样复制到 <code>public/llm-viz/</code>，这篇文章则生成到 <code>public/posts/llm-viz-rea/</code>。</p>
+<hr>
+<h2 id="12-踩坑记录">12. 踩坑记录</h2>
+<ol>
+<li><strong>Chromium 缺系统库</strong>：<code>libnspr4.so: cannot open shared object file</code>。没有 sudo 时用 <code>apt-get download</code> + <code>dpkg-deb -x</code> 解压到本地，再设 <code>LD_LIBRARY_PATH</code>。</li>
+<li><strong>无头浏览器中文是豆腐块</strong>：同样方法弄一个字体，用独立的 <code>FONTCONFIG_FILE</code> 指向它。</li>
+<li><strong>WebGL 在无头环境报错</strong>：加 <code>--use-angle=swiftshader --enable-unsafe-swiftshader</code> 用 CPU 软件渲染。12 万个立方体在软件渲染下也能出图，只是慢一些。</li>
+<li><strong>REA 的 <code>--view</code> 参数格式</strong>：必须是 JSON，<code>{&quot;kind&quot;:&quot;web-bundle&quot;,&quot;collection&quot;:&quot;summary&quot;}</code>。错了也别慌，按错误提示里的 <code>expected</code> 改就行。</li>
+<li><strong>REA 漏掉了权重文件</strong>：因为文件名是传给包装函数的参数，不是直接 <code>fetch(&quot;...&quot;)</code>。静态分析的已知局限，需要配合阅读还原后的代码。</li>
+<li><strong>Craft Anything 默认拒绝读代码</strong>：这是净室模式的设计，不是 bug。先确认许可证，再加 <code>--deep</code>。</li>
+<li><strong>参数量对不上</strong>：85,728 vs 85,584，差的是 <code>lm_head</code>。</li>
+<li><strong>大模型挡住了小模型</strong>：GPT-2 的 token 嵌入矩阵有 50,257 列宽，一开始放得太近，在 nano-gpt 的视野里变成一面巨大的灰墙，后来把大模型挪到 3000 个单位之外。</li>
+<li><strong>Hugo 构建失败</strong> <code>binary with name &quot;tailwindcss&quot; not found</code>：主题用 Tailwind v4 的 <code>css.TailwindCSS</code>，需要 <code>@tailwindcss/cli</code>（v4 的 CLI 是单独的包），仓库里的 <code>tailwindcss</code> 包本身不带命令行。</li>
+</ol>
+<hr>
+<h2 id="13-版权与致谢">13. 版权与致谢</h2>
+<ul>
+<li>原作：<strong>LLM Visualization</strong> © 2023-2026 <a href="https://bbycroft.net">Brendan Bycroft</a>，<a href="https://github.com/bbycroft/llm-viz/blob/main/LICENSE">MIT License</a>。本复刻使用了其公开的 <code>gpt-nano-sort-model.json</code> 权重文件，并参考了其模型结构、章节划分与可视化思路；<strong>所有代码均为重新编写</strong>，未复制原站代码。</li>
+<li>模型与训练示例：<strong>minGPT</strong> © 2020 <a href="https://github.com/karpathy/minGPT">Andrej Karpathy</a>，MIT License。</li>
+<li>逆向工具：<a href="https://github.com/morluto/rea">REA</a>（MIT）、<a href="https://github.com/storytold/craft-anything">Craft Anything</a>（MIT / Apache-2.0）。</li>
+<li>完整许可证文本见 <a href="https://github.com/sunCityDaa/sunCityDaa.github.io/blob/master/static/llm-viz/LICENSE-THIRD-PARTY.md"><code>static/llm-viz/LICENSE-THIRD-PARTY.md</code></a>。</li>
+</ul>
+<p>本文中的逆向分析仅针对公开网页和 MIT 许可的开源项目，用于学习 Transformer 的内部结构。</p>
+
+    </div>
+
+    
+    <div class="px-8 pb-2 text-sm text-gray-500 flex items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+      </svg>
+      Last updated on 2026-11-16
+    </div>
+    
+
+    <footer class="px-8 py-6 bg-gray-50 border-t border-gray-100">
+      
+  <div class="tags-container">
+    <div class="text-gray-700 font-medium mb-2">Tags:</div>
+    <div class="flex flex-wrap gap-2">
+        <a href="/tags/llm/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          LLM
+        </a>
+        <a href="/tags/gpt/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          GPT
+        </a>
+        <a href="/tags/transformer/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          Transformer
+        </a>
+        <a href="/tags/webgl/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          WebGL
+        </a>
+        <a href="/tags/%E9%80%86%E5%90%91%E5%B7%A5%E7%A8%8B/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          逆向工程
+        </a>
+        <a href="/tags/rea/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          REA
+        </a>
+        <a href="/tags/craft-anything/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          Craft Anything
+        </a>
+        <a href="/tags/%E5%8F%AF%E8%A7%86%E5%8C%96/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          可视化
+        </a>
+    </div>
+  </div>
+
+      
+      
+      <div class="mt-6 flex justify-center">
+        <a href="/" class="inline-flex items-center text-gray-600 hover:text-blue-600 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to Home
+        </a>
+      </div>
+    </footer>
+  </article>
+
+  
+  <div class="max-w-4xl mx-auto mt-8 bg-white rounded-lg shadow-md overflow-hidden" style="--tw-prose-body: #374151; --tw-prose-headings: #111827; --tw-prose-links: #2563eb; --tw-prose-links-hover: #1d4ed8; --tw-prose-code-bg: #f3f4f6; color: #374151; background-color: #ffffff;">
+    
+ 
+  </div>
+
+    </main>
+  </div>
+  
+  <footer class="w-full max-w-4xl mx-auto px-6 overflow-x-auto sm:overflow-visible">
+    <div class="py-8 border-t border-gray-200 bg-gray-50 shadow-inner mt-10">
+  <div class="container mx-auto px-4 max-w-4xl">
+    
+     
+     
+       
+         
+       
+     
+       
+         
+       
+     
+       
+         
+       
+    
+
+    
+    <div class="flex justify-center space-x-8">
+      
+      
+      <div class="transform transition duration-200 hover:scale-110">
+        <a
+          href="https://github.com/sunCityDaa"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-gray-600 hover:text-gray-900"
+          aria-label="GitHub"
+        >
+          <svg
+            class="h-7 w-7"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </a>
+      </div>
+      
+
+      
+      
+
+      
+      
+      <div class="transform transition duration-200 hover:scale-110">
+        <a
+          href="mailto:2367758021@qq.com"
+          rel="noopener noreferrer"
+          class="text-gray-600 hover:text-gray-900"
+          aria-label="邮箱"
+        >
+          <svg
+            class="h-7 w-7"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z"
+            />
+            <path
+              d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z"
+            />
+          </svg>
+        </a>
+      </div>
+      
+    </div>
+
+    <div class="text-center mt-6 text-sm text-gray-500">
+      &copy; 2026 sunCityDaa Website | Powered by <a href="https://github.com/Daucloud/hugo-theme-void" class="text-gray-600 hover:text-gray-900 hover:underline">hugo-theme-void</a> | <span id="busuanzi_container_site_pv" style="display: none;">Total visits: <span id="busuanzi_value_site_pv" class="text-gray-600"></span></span>
+    </div>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  </div>
+</div>
+
+  </footer>
+</body>
+</html>

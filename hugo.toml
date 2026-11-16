@@ -24,6 +24,11 @@ pageRef = '/posts'
 weight = 20
 
 [[menus.main]]
+name = 'LLM Viz'
+url = '/llm-viz/'
+weight = 25
+
+[[menus.main]]
 name = 'Tags'
 pageRef = '/tags'
 weight = 30

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Craft Anything on sunCityDaa Website</title>
+    <link>https://sunCityDaa.github.io/tags/craft-anything/</link>
+    <description>Recent content in Craft Anything on sunCityDaa Website</description>
+    <generator>Hugo</generator>
+    <language>en-US</language>
+    <lastBuildDate>Mon, 16 Nov 2026 10:00:00 +0800</lastBuildDate>
+    <atom:link href="https://sunCityDaa.github.io/tags/craft-anything/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>用 REA &#43; Craft Anything 逆向并复刻 LLM 3D 可视化（bbycroft.net/llm）</title>
+      <link>https://sunCityDaa.github.io/posts/llm-viz-rea/</link>
+      <pubDate>Mon, 16 Nov 2026 10:00:00 +0800</pubDate>
+      <guid>https://sunCityDaa.github.io/posts/llm-viz-rea/</guid>
+      <description>&lt;blockquote&gt;&#xA;&lt;p&gt;&lt;strong&gt;在线体验 👉 &lt;a href=&#34;https://sunCityDaa.github.io/llm-viz/&#34;&gt;/llm-viz/&lt;/a&gt;&lt;/strong&gt;　｜　原站：&lt;a href=&#34;https://bbycroft.net/llm&#34;&gt;https://bbycroft.net/llm&lt;/a&gt;&lt;/p&gt;&#xA;&lt;/blockquote&gt;&#xA;&lt;p&gt;Brendan Bycroft 的 &lt;a href=&#34;https://bbycroft.net/llm&#34;&gt;LLM Visualization&lt;/a&gt; 是我见过讲 GPT 内部结构最直观的作品：它把一个真实的小型 GPT 的每一个权重、每一个中间结果都画成 3D 空间里的小方块，配合逐章讲解，一步一步展示一次推理是怎么完成的。&lt;/p&gt;&#xA;&lt;p&gt;这篇文章完整记录了我做的一件事：&lt;strong&gt;用两个开源逆向工具 &lt;a href=&#34;https://github.com/morluto/rea&#34;&gt;REA&lt;/a&gt; 和 &lt;a href=&#34;https://github.com/storytold/craft-anything&#34;&gt;Craft Anything&lt;/a&gt; 对这个网站做逆向分析（RE），然后根据分析结果，用纯 JavaScript + WebGL2 从零写一个复刻版，部署到本博客。&lt;/strong&gt;&lt;/p&gt;&#xA;&lt;p&gt;复刻版的特点：&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&lt;strong&gt;真实推理&lt;/strong&gt;：浏览器里用纯 JS 跑 nano-gpt（3 层、3 头、48 维）的完整前向计算，与 PyTorch 参考激活值逐层比对，最大误差 1.9×10⁻⁶。&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;近 12 万个格子&lt;/strong&gt;：nano-gpt 的每一个权重和激活值（共 192 个张量、119,509 个数）都是一个 3D 方块，颜色表示数值正负和大小，鼠标悬停可以看到具体数字。&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;11 章中文讲解&lt;/strong&gt;：简介 → 预备知识 → 嵌入 → 层归一化 → 自注意力 → 投影 → MLP → Transformer 块 → Softmax → 输出 → 规模对比，每章自动飞到对应位置，并能播放&amp;quot;逐列计算&amp;quot;的动画。&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;可交互&lt;/strong&gt;：可以修改输入字母重新推理；可以飞到按真实比例绘制的 GPT-2 small / XL、GPT-3 旁边做规模对比。&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;零依赖、零构建&lt;/strong&gt;：一个 &lt;code&gt;index.html&lt;/code&gt; + 5 个 ES 模块，直接作为 Hugo 静态文件发布。&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;&lt;img src=&#34;rebuild-attn.png&#34; alt=&#34;复刻版：自注意力章节&#34;&gt;&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>
