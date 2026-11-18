@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>图像生成可视化 · Qwen-Image-2.1 / FLUX.3 Klein 3D 讲解</title>
+  <meta name="description" content="用 a100 上真实推理导出的数据，3D 逐层、逐步展示文生图模型 Qwen-Image-2.1 与 FLUX.3 Klein 的文本编码、去噪 Transformer、注意力与 VAE 解码。">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <a class="home" href="/" title="返回博客首页">← 博客</a>
+      <span class="title">图像生成可视化 <small>image-viz · 3D 讲解</small></span>
+    </div>
+    <nav class="models" id="model-buttons"></nav>
+    <div class="actions">
+      <a href="/posts/image-viz/" title="技术文档与实测报告">文档</a>
+      <a href="/llm-viz/" title="姊妹篇：LLM 可视化">LLM Viz</a>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel">
+      <section class="io-box">
+        <div class="prompt-row"><span class="lbl">提示词</span><p id="prompt" class="prompt"></p></div>
+        <div class="thumbs">
+          <figure><img id="x0-img" alt="当前步 x0 预测"><figcaption>x₀ 预测（VAE 解码）</figcaption></figure>
+          <figure><img id="xt-img" alt="当前潜变量 x_t"><figcaption>x_t（潜变量投影）</figcaption></figure>
+          <figure><img id="final-img" alt="最终图像"><figcaption>最终图像</figcaption></figure>
+        </div>
+      </section>
+
+      <nav class="chapter-nav">
+        <button id="btn-prev" class="btn" aria-label="上一章">‹</button>
+        <div class="chapter-title"><span id="chapter-num"></span> <span id="chapter-name"></span></div>
+        <button id="btn-next" class="btn" aria-label="下一章">›</button>
+      </nav>
+
+      <div class="panel-body">
+        <ol id="toc" class="toc"></ol>
+        <article id="chapter-content" class="content"></article>
+      </div>
+
+      <footer class="player">
+        <button id="btn-play" class="btn play" aria-label="播放去噪">▶</button>
+        <input id="step-range" type="range" min="0" max="39" value="0" aria-label="去噪步">
+        <span id="step-label" class="play-label"></span>
+      </footer>
+    </aside>
+
+    <section class="viewport">
+      <canvas id="canvas"></canvas>
+      <div id="labels" class="labels"></div>
+      <div id="tooltip" class="tooltip" hidden></div>
+      <div class="view-tools">
+        <button id="btn-reset" class="btn small" title="回到当前章节视角">⟲ 视角</button>
+        <button id="btn-overview" class="btn small" title="查看整条管线">全景</button>
+      </div>
+      <div class="legend">
+        <span><i class="ramp act"></i>图像 token 激活 RMS（低→高）</span>
+        <span class="sep"></span>
+        <span><i class="ramp txt"></i>文本 token</span>
+        <span class="sep"></span>
+        <span><i class="ramp attn"></i>注意力</span>
+      </div>
+      <div id="loading" class="loading">正在加载导出数据…</div>
+    </section>
+  </main>
+
+  <noscript>本页需要启用 JavaScript 与 WebGL2。</noscript>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
