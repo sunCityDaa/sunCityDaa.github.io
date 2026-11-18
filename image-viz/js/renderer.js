@@ -13,7 +13,7 @@ uniform mat4 u_vp;
 uniform sampler2D u_atlas;           // R8：当前步每层图像 token 的 RMS（已逐 tile 归一化）
 uniform sampler2D u_scalar;          // R32F：当前步的标量
 uniform sampler2D u_state;           // RGBA32F：每组 r=亮度 g=高亮 b=调色板覆盖(-1 不覆盖) a=高度缩放
-uniform vec3 u_static[8];
+uniform vec3 u_static[9];
 out vec3 v_col;
 out vec3 v_n;
 

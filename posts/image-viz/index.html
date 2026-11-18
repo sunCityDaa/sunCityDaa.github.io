@@ -274,7 +274,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          54 min read
+          61 min read
         </span>
 
         
@@ -296,7 +296,7 @@
 <p><img src="qwen-overview.png" alt="image-viz 总览：Qwen-Image-2.1 的一次出图"></p>
 <p>最终成品：</p>
 <ul>
-<li><strong>两个模型、11 章中文讲解</strong>：总览 → 提示词与 token → 文本编码器 → 噪声与潜变量 → 时间步与调制 → Transformer block → 残差流里的图像 → 词到图像区域 → 一步步去噪 → VAE 解码 → 两个模型对比。</li>
+<li><strong>两个模型、13 章中文讲解</strong>：总览 → 提示词与 token → 文本编码器 → 噪声与潜变量 → 时间步与调制 → Transformer block → <strong>权重矩阵</strong> → <strong>模型级模块</strong> → 残差流里的图像 → 词到图像区域 → 一步步去噪 → VAE 解码 → 两个模型对比。</li>
 <li><strong>每一步都是真的</strong>：Qwen 走 40 步、FLUX 走 16 步，每步抓取所有 32（或 33）个 block 的 64×64 图像 token 激活。拖动时间轴，格子会跟着变。</li>
 <li><strong>注意力是复算出来的</strong>：导出时用模型自己的 QK-Norm 与 RoPE 重算 softmax，把「每个图像位置对每个词的注意力」画成热图。<code>LLM</code>、<code>VIZ</code> 集中在狐狸举的木牌上，<code>fox</code> 勾出狐狸，<code>paws</code> 落在爪子上，<code>trees</code>、<code>background</code> 落在背景。</li>
 <li><strong>x₀ 是真解码的</strong>：每步的速度 v 按 <code>x0 ≈ x_t − t·v</code> 得到估计，<strong>真的送进 VAE 解码</strong>，和 pipeline 自己的输出逐像素比对，平均误差只有 0.30/255。</li>
@@ -314,12 +314,13 @@
 <li><a href="#7-%E6%80%8E%E4%B9%88%E5%AF%BC%E5%87%BA%E6%8E%A2%E9%92%88%E9%92%A9%E5%AD%90%E4%B8%8E%E6%B3%A8%E6%84%8F%E5%8A%9B%E5%A4%8D%E7%AE%97">怎么导出：探针、钩子与注意力复算</a></li>
 <li><a href="#8-%E6%A0%A1%E9%AA%8C%E6%88%91%E4%BB%AC%E6%8A%93%E5%88%B0%E7%9A%84%E6%95%B0%E6%98%AF%E7%9C%9F%E7%9A%84%E5%90%97">校验：我们抓到的数是真的吗</a></li>
 <li><a href="#9-%E5%8F%AF%E8%A7%86%E5%8C%96%E8%AE%BE%E8%AE%A1%E6%80%8E%E4%B9%88%E6%8A%8A-4096-%E4%B8%AA-token-%E7%94%BB%E6%88%90%E4%B8%80%E7%89%87%E9%A3%8E%E6%99%AF">可视化设计：怎么把 4096 个 token 画成一片风景</a></li>
-<li><a href="#10-%E6%B8%B2%E6%9F%93%E5%AE%9E%E7%8E%B0webgl2-%E5%AE%9E%E4%BE%8B%E5%8C%96">渲染实现：WebGL2 实例化</a></li>
-<li><a href="#11-%E7%9C%8B%E5%88%B0%E4%BA%86%E4%BB%80%E4%B9%88">看到了什么</a></li>
-<li><a href="#12-%E5%B1%80%E9%99%90%E4%B8%8E%E5%AE%83%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E6%92%92%E8%B0%8E">局限与它为什么不撒谎</a></li>
-<li><a href="#13-%E6%9C%AC%E5%9C%B0%E8%BF%90%E8%A1%8C%E9%87%8D%E6%96%B0%E5%AF%BC%E5%87%BA%E4%B8%8E%E9%83%A8%E7%BD%B2">本地运行、重新导出与部署</a></li>
-<li><a href="#14-%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95">踩坑记录</a></li>
-<li><a href="#15-%E7%89%88%E6%9D%83%E4%B8%8E%E8%87%B4%E8%B0%A2">版权与致谢</a></li>
+<li><a href="#10-%E6%8A%8A%E6%A8%A1%E5%9E%8B%E6%9C%AC%E8%BA%AB%E7%94%BB%E5%87%BA%E6%9D%A5%E6%9D%83%E9%87%8D%E7%9F%A9%E9%98%B5">把模型本身画出来：权重矩阵</a></li>
+<li><a href="#11-%E6%B8%B2%E6%9F%93%E5%AE%9E%E7%8E%B0webgl2-%E5%AE%9E%E4%BE%8B%E5%8C%96">渲染实现：WebGL2 实例化</a></li>
+<li><a href="#12-%E7%9C%8B%E5%88%B0%E4%BA%86%E4%BB%80%E4%B9%88">看到了什么</a></li>
+<li><a href="#13-%E5%B1%80%E9%99%90%E4%B8%8E%E5%AE%83%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E6%92%92%E8%B0%8E">局限与它为什么不撒谎</a></li>
+<li><a href="#14-%E6%9C%AC%E5%9C%B0%E8%BF%90%E8%A1%8C%E9%87%8D%E6%96%B0%E5%AF%BC%E5%87%BA%E4%B8%8E%E9%83%A8%E7%BD%B2">本地运行、重新导出与部署</a></li>
+<li><a href="#15-%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95">踩坑记录</a></li>
+<li><a href="#16-%E7%89%88%E6%9D%83%E4%B8%8E%E8%87%B4%E8%B0%A2">版权与致谢</a></li>
 </ol>
 <hr>
 <h2 id="1-为什么文生图比-llm-难画">1. 为什么文生图比 LLM 难画</h2>
@@ -545,7 +546,7 @@ t 与 target_t（本步要跳到哪）各自嵌入后相加 → 逐 token 调制
       </tr>
       <tr>
           <td><code>steps/xt_XX.jpg</code></td>
-          <td>潜变量的<strong>线性 RGB 投影</strong>（示意，见第 12 节）</td>
+          <td>潜变量的<strong>线性 RGB 投影</strong>（示意，见第 13 节）</td>
           <td>256² × 步数</td>
       </tr>
       <tr>
@@ -560,7 +561,7 @@ t 与 target_t（本步要跳到哪）各自嵌入后相加 → 逐 token 调制
       </tr>
       <tr>
           <td><code>meta.json</code></td>
-          <td>形状、参数量、时间表、逐步逐层统计、性能实测</td>
+          <td>形状、参数量、时间表、逐步逐层统计、性能实测、<code>arch</code> 里每个子模块的真实名字/形状</td>
           <td>几百 KB</td>
       </tr>
   </tbody>
@@ -583,7 +584,7 @@ t 与 target_t（本步要跳到哪）各自嵌入后相加 → 逐 token 调制
 <h3 id="export_webpy再抓网页要的东西">export_web.py：再抓网页要的东西</h3>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>python export_web.py --model qwen --out web/qwen --probe runs/qwen/summary.json
 </span></span></code></pre></div><p>它跟 <code>arch_probe</code> 用同样的加载方式，但挂了更多钩子：</p>
-<p><strong>激活。</strong> 每个 block 的 forward 输出取出图像 token 那 4096 行，reshape 成 64×64，算每个 token 的 RMS，量化成 8 位存进图集。<strong>每张图单独归一化</strong>——因为不同层的 RMS 差了好几个数量级（见第 5 节和第 11 节），统一归一化的话中间层会变成全黑。</p>
+<p><strong>激活。</strong> 每个 block 的 forward 输出取出图像 token 那 4096 行，reshape 成 64×64，算每个 token 的 RMS，量化成 8 位存进图集。<strong>每张图单独归一化</strong>——因为不同层的 RMS 差了好几个数量级（见第 5 节和第 12 节），统一归一化的话中间层会变成全黑。</p>
 <p><strong>注意力。</strong> 这一步是整个项目最费劲的地方。</p>
 <p>diffusers 的注意力实现不会把 attn 矩阵交出来，而且开了 <code>scaled_dot_product_attention</code> 之后根本拿不到。所以不能&quot;顺便记一下&quot;，只能<strong>按模型自己的公式重算</strong>：</p>
 <pre tabindex="0"><code>1. 取该 block 的 q 或 k 的投影前输入（通过钩子拿到 hidden_states）
@@ -689,7 +690,59 @@ along  = (sx·|sin yaw| + sz·|cos yaw|)·sin pitch + sy·cos pitch
 dist   = pad · max(across/2/th, along/2/tv) + max(sx, sz)·0.08
 </code></pre><p>这样当相机俯视一张 64×64 的平板时，距离会正确收敛，而不是被包围球的半径推得远远的（这是第一版最大的问题：所有章节都像在看一粒米）。</p>
 <hr>
-<h2 id="10-渲染实现webgl2-实例化">10. 渲染实现：WebGL2 实例化</h2>
+<h2 id="10-把模型本身画出来权重矩阵">10. 把模型本身画出来：权重矩阵</h2>
+<p>第一版上线后，得到一个很准确的意见：<strong>只看到了中间结果，看不到模型架构</strong>。</p>
+<p>这话说得对。格子板上的高低是这一层<strong>算出来的值</strong>，你没法从中知道这一层有几个矩阵、各是什么形状、哪个大哪个小。llm-viz 之所以能看懂 GPT，是因为它把每个权重矩阵都画成了一个盒子。所以补了两章：<strong>权重矩阵</strong> 和 <strong>模型级模块</strong>。</p>
+<h3 id="数据从哪来">数据从哪来</h3>
+<p>不需要重新跑推理。<code>arch_probe.py</code> 在第一次探针时就把 <code>named_parameters()</code> 完整存了下来（Qwen 297 个张量、FLUX 359 个）。<code>export_arch.py</code> 从里面抽出两样东西：</p>
+<ul>
+<li><strong>一个 block 的全部子模块</strong>（<code>transformer_blocks.0.</code> / <code>single_transformer_blocks.0.</code>）</li>
+<li><strong>模型级模块</strong>：嵌入、投影、调制、输出</li>
+</ul>
+<p>对着真实张量表，几个之前只能靠读源码猜的名字就确定了：</p>
+<table>
+  <thead>
+      <tr>
+          <th>模型</th>
+          <th>block 里的矩阵</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Qwen</td>
+          <td><code>attn.to_q</code> / <code>to_k</code> / <code>to_v</code> / <code>to_out.0</code>（各 4096²）+ <code>img_mlp.gate_layer</code> / <code>proj</code>（各 12288×4096）+ <code>img_mlp.out</code>（4096×12288）</td>
+      </tr>
+      <tr>
+          <td>FLUX</td>
+          <td><code>attn.to_q</code> / <code>to_k</code> / <code>to_v</code> / <code>to_out.0</code>（各 3072²）+ <code>ff.linear_in</code>（18432×3072）+ <code>ff.linear_out</code>（3072×9216）</td>
+      </tr>
+  </tbody>
+</table>
+<p>每个 block 的模块参数量之和与实测完全一致：<strong>218.1M</strong> 与 <strong>122.7M</strong>，一分不差。</p>
+<h3 id="怎么画">怎么画</h3>
+<p>一个矩阵 → 一块平板：<strong>宽 = 列数 × 常数，深 = 行数 × 常数</strong>。于是平板的面积就正比于 <code>行 × 列</code>，也就是参数量。相机放在正上方（pitch ≈ 1.42），俯视时面积的比较是最直接的。</p>
+<p><img src="qwen-arch.png" alt="Qwen 的一个 block：4 块蓝板一样大（4096²），3 块绿板各是 3 倍面积（12288×4096）"></p>
+<p>一眼就能读出的几件事：</p>
+<ul>
+<li><strong>q/k/v/o 是四个独立的 4096²</strong>，不是融合的 qkv——所以是 4 块同样大的板。</li>
+<li><strong>MLP 的三个矩阵各是注意力的 3 倍</strong>（<code>mlp_ratio=3</code>）。算一下：MLP 占这一层的 <strong>69%</strong>（151.0M / 218.1M）。参数大头既不是注意力也不是嵌入，是 FFN。</li>
+<li>三个 MLP 矩阵里，两块是 12288 行 × 4096 列（竖着），一块是 4096 × 12288（横着）——SwiGLU 的 gate / up 是「变宽再相乘」，down 是「变窄」。</li>
+</ul>
+<p>FLUX 那边同样的画法暴露出不同的比例：</p>
+<p><img src="flux-arch.png" alt="FLUX 的一个合流块：4 块 3072² 一样大，linear_in 是 6 倍面积"></p>
+<p><code>ff.linear_in</code> 一次算出 2×9216（gate 和 up 拼在一起），所以是 18432×3072，等于注意力矩阵的 <strong>6 倍面积</strong>；<code>linear_out</code> 是 9216×3072，3 倍。MLP 同样占这个 block 的 69%（84.9M / 122.7M）。</p>
+<h3 id="模型级模块调制的两种做法">模型级模块：调制的两种做法</h3>
+<p>第二张图把 block 之外的矩阵也铺开（Qwen 合计 135.8M，FLUX 273.3M）：</p>
+<ul>
+<li><strong>Qwen</strong>：只有一个 <code>modulation.1</code>（4096 → 16384，67.1M），<strong>32 个 block 共用</strong>。所以图上是孤零零一块大板，比其它都大。</li>
+<li><strong>FLUX</strong>：调制分 <strong>6 组</strong>（分流/合流 × 图像/参考图/文本），每组 9216×3072 = 28.3M，光是调制就 <strong>170M</strong>。图上中间那一片等大的板就是它们。</li>
+</ul>
+<p>这也解释了两者在 block 参数上的差异：Qwen 把调制提到模型级共享，省下约 2.1B 参数；FLUX 则让每个 token 都有自己的 scale/shift/gate。</p>
+<h3 id="交互">交互</h3>
+<p>每块平板上标着短名、形状和参数量；鼠标悬停会显示全名、精确参数量和作用。图上的短名是缩写过的（<code>early_stream_modulations.image.linear</code> → <code>early.image</code>），全名在侧栏表格里。</p>
+<p><strong>诚实说明</strong>：平板是用 2 个单位的小方块铺出来的，所以面积是<strong>量化到方块</strong>的近似成正比，不是逐元素精确；单行/单列的极小矩阵（比如 4096×64 的 <code>img_in</code>）会被拉宽到至少一格，面积会偏大一点点。</p>
+<hr>
+<h2 id="11-渲染实现webgl2-实例化">11. 渲染实现：WebGL2 实例化</h2>
 <p>整个渲染器 232 行，没有依赖。</p>
 <p><strong>每个格子一个立方体实例</strong>：Qwen 14.6 万个、FLUX 15.0 万个（39 / 46 个组）。实例数据 12 个 float：</p>
 <pre tabindex="0"><code>x, y, z, s   |   src, u, v, palette   |   groupId, hmax, h0, staticColor
@@ -724,7 +777,7 @@ dist   = pad · max(across/2/th, along/2/tv) + max(sx, sz)·0.08
 <p>立方体 6 个面、36 个顶点，逆时针绕序 <code>[0,2,1,0,3,2]</code>，开 <code>CULL_FACE</code>。第一版我把绕序写反了，结果所有方块看起来都是空心的——你看到的是内壁。</p>
 <p>悬停拾取不用射线求交库，而是<strong>沿射线步进</strong>：以格子高度为单位往前走，每一步把世界坐标换成格子索引，再看该处高度是否超过射线当前高度。对 15 万个立方体来说，这比逐实例求交快得多。</p>
 <hr>
-<h2 id="11-看到了什么">11. 看到了什么</h2>
+<h2 id="12-看到了什么">12. 看到了什么</h2>
 <p>把所有数据摆在一起之后，有几件事挺有意思。</p>
 <p><strong>构图在第 0 步就定了。</strong> 这是最反直觉的。第 0 步（纯噪声）的 <code>x₀</code> 估计里，狐狸已经居中、背景已经是雪林和中景虚化——</p>
 <p><img src="qwen-steps.png" alt="Qwen 的 40 步：上行是当前潜变量 x_t，下行是模型预测的最终图 x0"></p>
@@ -770,7 +823,7 @@ dist   = pad · max(across/2/th, along/2/tv) + max(sx, sz)·0.08
 <p><strong>注意力是一个很好的&quot;模型在找什么&quot;的探针。</strong> 同一个词在不同层、不同步的热图完全不一样：早期层里，<code>LLM</code> 可能只在一片区域泛泛地亮；到合流 14 层，它会精确地收到木牌上的那两行笔画。这也侧面说明了为什么这两代模型要多层、多步——单层的注意力不足以定位到这么小的区域。</p>
 <p><img src="flux-attn-strip.png" alt="FLUX 全部 20 个词在同一层上的注意力条带"></p>
 <hr>
-<h2 id="12-局限与它为什么不撒谎">12. 局限与它为什么不撒谎</h2>
+<h2 id="13-局限与它为什么不撒谎">13. 局限与它为什么不撒谎</h2>
 <p>诚实地说清楚哪些地方不是严格线性的、哪些是抽样的：</p>
 <ol>
 <li><strong><code>xt_XX.jpg</code> 只是示意。</strong> 潜变量有 64（Qwen）或 128（FLUX）个通道，没法直接显示。这里用最小二乘拟合了一个线性 RGB 映射（以最终图像缩到 64×64 为目标），平均误差 Qwen 0.024 / FLUX 0.053（0–1 尺度）。能看构图，颜色不准。<strong>要看&quot;模型认为的图&quot;，请看 <code>x0_XX.jpg</code>，那是真的 VAE 解码。</strong></li>
@@ -782,7 +835,7 @@ dist   = pad · max(across/2/th, along/2/tv) + max(sx, sz)·0.08
 </ol>
 <p>第 3–6 条都是&quot;少画一点&quot;，而不是&quot;画错一点&quot;——每一格存在的数都是真的。这是我觉得这类可视化唯一站得住的立场。</p>
 <hr>
-<h2 id="13-本地运行重新导出与部署">13. 本地运行、重新导出与部署</h2>
+<h2 id="14-本地运行重新导出与部署">14. 本地运行、重新导出与部署</h2>
 <h3 id="本地看">本地看</h3>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cd static <span style="color:#f92672">&amp;&amp;</span> python3 -m http.server <span style="color:#ae81ff">8000</span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># http://localhost:8000/image-viz/            默认 Qwen-Image-2.1</span>
@@ -807,6 +860,10 @@ dist   = pad · max(across/2/th, along/2/tv) + max(sx, sz)·0.08
           <td>网页数据：x0/x_t、激活图集、词→区域注意力、VAE 解码校验</td>
       </tr>
       <tr>
+          <td><code>export_arch.py</code></td>
+          <td>从探针的张量表抽出「架构」字段写进 <code>meta.json</code>（本机可跑，不需要模型）</td>
+      </tr>
+      <tr>
           <td><code>montage.py</code></td>
           <td>报告用的拼图与热图</td>
       </tr>
@@ -826,7 +883,7 @@ dist   = pad · max(across/2/th, along/2/tv) + max(sx, sz)·0.08
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>hugo --cleanDestinationDir      <span style="color:#75715e"># 需要 extended 版本 + Tailwind v4 CLI</span>
 </span></span></code></pre></div><p><code>static/image-viz/</code> 会被原样复制到 <code>public/image-viz/</code>，这篇文章生成到 <code>public/posts/image-viz/</code>。</p>
 <hr>
-<h2 id="14-踩坑记录">14. 踩坑记录</h2>
+<h2 id="15-踩坑记录">15. 踩坑记录</h2>
 <ol>
 <li><strong>Qwen 的 VAE 输出 4 通道。</strong> <code>AutoencoderKLQwenImage21</code> 解码出来带 alpha，直接存 JPEG 会炸。按 pipeline 的做法合成到白底上才对，否则整张图会偏色。</li>
 <li><strong>注意力拿不到。</strong> diffusers 开了 SDPA 之后不返回 attn 矩阵，<code>output_attentions=True</code> 也只对一部分实现有效。最后只能按公式复算——而这反而是最可靠的，因为它顺便证明了我们对 QK-Norm 和 RoPE 的理解是对的。</li>
@@ -840,7 +897,7 @@ dist   = pad · max(across/2/th, along/2/tv) + max(sx, sz)·0.08
 <li><strong>写文件必须指定 UTF-8。</strong> 导出脚本在 a100 的默认 locale 下写中文注释会撞上 latin-1 编码错误。</li>
 </ol>
 <hr>
-<h2 id="15-版权与致谢">15. 版权与致谢</h2>
+<h2 id="16-版权与致谢">16. 版权与致谢</h2>
 <ul>
 <li>
 <p><strong>Qwen-Image-2.1</strong> 由通义实验室（Hangzhou Tongyi Laboratory Technology Co., Ltd.）发布，许可证为 <strong>Qwen Research License Agreement</strong>（仅限非商业研究/评估用途）。按协议第 3(c) 条，此处声明：</p>
