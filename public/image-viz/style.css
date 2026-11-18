@@ -20,10 +20,11 @@ body { font-family: var(--font); color: var(--ink); background: var(--bg); displ
 .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .brand .title { font-size: 17px; white-space: nowrap; }
 .brand small { color: #c9a6e0; font-size: 12px; margin-left: 4px; }
-.models { display: flex; gap: 6px; margin-left: auto; overflow-x: auto; }
+.models { display: flex; gap: 6px; margin-left: auto; overflow-x: auto; min-width: 0; scrollbar-width: none; }
+.models::-webkit-scrollbar { display: none; }
 .models button { background: rgba(255,255,255,0.08); color: #f1e2fb; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 4px 10px; font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
 .models button.active { background: #f3e3ff; color: var(--top); border-color: #f3e3ff; }
-.actions { display: flex; gap: 14px; }
+.actions { display: flex; gap: 14px; flex-shrink: 0; }
 
 .layout { flex: 1; display: flex; min-height: 0; }
 .panel { width: 440px; max-width: 46vw; display: flex; flex-direction: column; background: var(--panel); border-right: 1px solid var(--line); min-height: 0; }
