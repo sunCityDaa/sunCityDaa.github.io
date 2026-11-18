@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr" class="h-full">
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>把文生图模型拆开看：Qwen-Image-2.1 与 FLUX.3 Klein 的 3D 可视化 | sunCityDaa Website</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+
+<link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+<link rel="shortcut icon" href="/favicon/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+<link rel="manifest" href="/favicon/site.webmanifest" />
+
+
+
+  
+    
+    
+      
+        
+          <link rel="stylesheet" href="/css/main.9a00c6607342147f30efcb98147d0a4d49cb560cc45fc64970eb0ed17e8da019.css" integrity="sha256-mgDGYHNCFH8w78uYFH0KTUnLVgzEX8ZJcOsO0X6NoBk=" crossorigin="anonymous">
+        
+      
+    
+  
+
+
+
+
+
+<link rel="stylesheet" href="/css/style.min.b8957659e8f2f20e0a23b5cc1f1154837f41cca9f5570fd8f30cd1c087568650.css" media="screen" integrity="sha256-uJV2Wejy8g4KI7XMHxFUg39BzKn1Vw/Y8wzRwIdWhlA=">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', (event) => {
+    document.querySelectorAll('pre code').forEach((el) => {
+      hljs.highlightElement(el);
+      
+      setTimeout(() => {
+        el.style.backgroundColor = 'transparent';
+        el.parentElement.style.backgroundColor = '#ffffff';
+      }, 10);
+    });
+  });
+</script>
+
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+      <script src="/js/main.b86ee76fd11b0aa5b9ab803419695ebcbc971f8cee7c871a420d36f3851f7ab1.js" integrity="sha256-uG7nb9EbCqW5q4A0GWlevLyXH4zufIcaQg0284UferE=" crossorigin="anonymous"></script>
+
+
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "$", right: "$", display: false}
+      ],
+      throwOnError: false
+    });
+    
+    
+    document.querySelectorAll('pre code').forEach(function(codeBlock) {
+      
+      let language = '';
+      codeBlock.className.split(' ').forEach(function(cls) {
+        if (cls.startsWith('language-')) {
+          language = cls.substring(9);
+        }
+      });
+      
+      
+      const pre = codeBlock.parentNode;
+      const wrapper = pre.parentNode;
+      
+      
+      const container = document.createElement('div');
+      container.className = 'code-block-container';
+      container.style.backgroundColor = '#ffffff';
+      
+      
+      const header = document.createElement('div');
+      header.className = 'code-block-header';
+      
+      
+      if (language) {
+        const langLabel = document.createElement('span');
+        langLabel.className = 'code-language-label';
+        langLabel.textContent = language.toUpperCase();
+        header.appendChild(langLabel);
+      }
+      
+      
+      const copyButton = document.createElement('button');
+      copyButton.className = 'copy-button';
+      copyButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg> Copy';
+      
+      copyButton.addEventListener('click', function() {
+        
+        const code = codeBlock.textContent;
+        
+        
+        navigator.clipboard.writeText(code).then(function() {
+          
+          copyButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Copied!';
+          
+          
+          setTimeout(function() {
+            copyButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg> Copy';
+          }, 2000);
+        });
+      });
+      
+      header.appendChild(copyButton);
+      
+      
+      if (pre.parentNode) {
+        pre.parentNode.removeChild(pre);
+      }
+      
+      
+      pre.style.backgroundColor = '#ffffff';
+      codeBlock.style.backgroundColor = '#ffffff';
+      
+      
+      container.appendChild(header);
+      container.appendChild(pre);
+      
+      
+      wrapper.appendChild(container);
+      
+      
+      hljs.highlightElement(codeBlock);
+      
+      
+      setTimeout(() => {
+        pre.style.backgroundColor = '#ffffff';
+        codeBlock.style.backgroundColor = '#ffffff';
+      }, 50);
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    
+    const footnoteBacklinks = document.querySelectorAll('.footnote-backref');
+    
+    footnoteBacklinks.forEach(function(backlink) {
+      backlink.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        
+        const href = backlink.getAttribute('href');
+        
+        if (href) {
+          
+          const target = document.querySelector(href);
+          
+          if (target) {
+            
+            target.scrollIntoView({ behavior: 'smooth' });
+            
+            
+            target.classList.add('footnote-highlight');
+            setTimeout(function() {
+              target.classList.remove('footnote-highlight');
+            }, 2000);
+          }
+        }
+      });
+    });
+  });
+</script>
+
+
+</head>
+<body class="flex flex-col bg-gray-50 font-bilingual">
+  <header class="fixed top-0 left-0 z-30 w-full bg-white shadow-sm">
+    <div class="w-full max-w-4xl mx-auto px-6 overflow-x-auto sm:overflow-visible">
+      <div class="flex items-center justify-between py-3">
+  <div class="text-lg sm:text-xl font-bold flex-shrink-0 max-w-[40%] sm:max-w-md truncate">
+    <a href="/" class="text-current hover:text-blue-600 transition-colors no-underline">
+      sunCityDaa Website
+    </a>
+  </div>
+  
+  <nav class="flex justify-end w-full whitespace-nowrap">
+    <ul class="flex flex-row items-center space-x-2 sm:space-x-4 md:space-x-6 py-2">
+    <li class="text-gray-600 hover:text-gray-900 text-base sm:text-lg">
+      <a
+        class="px-2 py-1 sm:px-3 sm:py-2 rounded hover:bg-gray-100 transition-colors" href="/">Home</a>
+    </li>
+    <li class="text-gray-600 hover:text-gray-900 text-base sm:text-lg">
+      <a
+        class="px-2 py-1 sm:px-3 sm:py-2 rounded hover:bg-gray-100 transition-colors" aria-current="true" class="ancestor font-semibold" href="/posts/">Posts</a>
+    </li>
+    <li class="text-gray-600 hover:text-gray-900 text-base sm:text-lg">
+      <a
+        class="px-2 py-1 sm:px-3 sm:py-2 rounded hover:bg-gray-100 transition-colors" href="/llm-viz/">LLM Viz</a>
+    </li>
+    <li class="text-gray-600 hover:text-gray-900 text-base sm:text-lg">
+      <a
+        class="px-2 py-1 sm:px-3 sm:py-2 rounded hover:bg-gray-100 transition-colors" href="/image-viz/">Image Viz</a>
+    </li>
+    <li class="text-gray-600 hover:text-gray-900 text-base sm:text-lg">
+      <a
+        class="px-2 py-1 sm:px-3 sm:py-2 rounded hover:bg-gray-100 transition-colors" href="/tags/">Tags</a>
+    </li>
+    <li class="text-gray-600 hover:text-gray-900 text-base sm:text-lg">
+      <a
+        class="px-2 py-1 sm:px-3 sm:py-2 rounded hover:bg-gray-100 transition-colors">About</a>
+    </li>
+    </ul>
+  </nav>
+
+</div>
+    </div>
+  </header>
+  
+  <div class="flex-1 flex flex-col min-h-screen pt-24">
+    <main class="flex-1 w-full max-w-4xl mx-auto px-6 overflow-x-auto sm:overflow-visible">
+      
+  <article class="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+    <header class="p-8 border-b border-gray-100 relative overflow-hidden">
+      
+      <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-50 to-transparent rounded-full opacity-70 -z-0 blur-2xl transform translate-x-1/4 -translate-y-1/4"></div>
+      
+      
+      
+      <div class="mb-3 flex">
+        
+        <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0" class="text-xs inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
+          深度学习
+        </a>
+        
+      </div>
+      
+      
+      <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 relative">把文生图模型拆开看：Qwen-Image-2.1 与 FLUX.3 Klein 的 3D 可视化</h1>
+      
+      <div class="flex flex-wrap items-center text-sm text-gray-500 gap-4 relative">
+        
+        
+        
+        <time datetime="2026-11-17T21:00:00&#43;08:00" class="flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          2026-11-17
+        </time>
+        
+        
+        <span class="flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          54 min read
+        </span>
+
+        
+        <span id="busuanzi_container_page_pv" class="inline-flex items-center whitespace-nowrap">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-gray-400 inline-block flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+          </svg><span class="whitespace-nowrap">Page Views <span id="busuanzi_value_page_pv"></span></span>
+        </span>
+      </div>
+    </header>
+
+    <div class="p-8 prose prose-sm sm:prose lg:prose-lg max-w-none">
+      <blockquote>
+<p><strong>在线体验 👉 <a href="/image-viz/">/image-viz/</a></strong>　｜　姊妹篇：<a href="/llm-viz/">LLM 可视化</a></p>
+</blockquote>
+<p>上一篇文章里我用 REA + Craft Anything 逆向并复刻了 <a href="https://bbycroft.net/llm">bbycroft.net/llm</a>——那个页面之所以好看，是因为它里面<strong>每一个方块都是一个真实的数</strong>：一次 GPT 推理的权重和激活，被一格一格画出来。</p>
+<p>这次我想把同一件事用在<strong>文生图模型</strong>上：把 Qwen-Image-2.1（16.2B）和 FLUX.3 Image Klein（10.1B）在 A100 上真实跑一次 1024×1024 出图，抓下每一步、每一层的中间结果，做成一个可以逐层、逐步、逐词查看的 3D 页面。</p>
+<p><img src="qwen-overview.png" alt="image-viz 总览：Qwen-Image-2.1 的一次出图"></p>
+<p>最终成品：</p>
+<ul>
+<li><strong>两个模型、11 章中文讲解</strong>：总览 → 提示词与 token → 文本编码器 → 噪声与潜变量 → 时间步与调制 → Transformer block → 残差流里的图像 → 词到图像区域 → 一步步去噪 → VAE 解码 → 两个模型对比。</li>
+<li><strong>每一步都是真的</strong>：Qwen 走 40 步、FLUX 走 16 步，每步抓取所有 32（或 33）个 block 的 64×64 图像 token 激活。拖动时间轴，格子会跟着变。</li>
+<li><strong>注意力是复算出来的</strong>：导出时用模型自己的 QK-Norm 与 RoPE 重算 softmax，把「每个图像位置对每个词的注意力」画成热图。<code>LLM</code>、<code>VIZ</code> 集中在狐狸举的木牌上，<code>fox</code> 勾出狐狸，<code>paws</code> 落在爪子上，<code>trees</code>、<code>background</code> 落在背景。</li>
+<li><strong>x₀ 是真解码的</strong>：每步的速度 v 按 <code>x0 ≈ x_t − t·v</code> 得到估计，<strong>真的送进 VAE 解码</strong>，和 pipeline 自己的输出逐像素比对，平均误差只有 0.30/255。</li>
+<li><strong>零依赖、零构建</strong>：一个 <code>index.html</code> + 5 个 ES 模块 + 一份 13 MB 的数据目录。</li>
+</ul>
+<hr>
+<h2 id="目录">目录</h2>
+<ol>
+<li><a href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E6%96%87%E7%94%9F%E5%9B%BE%E6%AF%94-llm-%E9%9A%BE%E7%94%BB">为什么文生图比 LLM 难画</a></li>
+<li><a href="#2-%E7%8E%AF%E5%A2%83%E4%B8%8E%E5%8A%A0%E8%BD%BD%E6%96%B9%E5%BC%8F">环境与加载方式</a></li>
+<li><a href="#3-qwen-image-21%E5%8D%95%E6%B5%81--%E5%9D%97%E5%9B%A0%E6%9E%9C">Qwen-Image-2.1：单流 + 块因果</a></li>
+<li><a href="#4-flux3-klein%E5%85%88%E5%88%86%E6%B5%81%E5%90%8E%E5%90%88%E6%B5%81">FLUX.3 Klein：先分流、后合流</a></li>
+<li><a href="#5-%E4%B8%A4%E4%B8%AA%E6%A8%A1%E5%9E%8B%E6%94%BE%E5%9C%A8%E4%B8%80%E5%BC%A0%E8%A1%A8%E9%87%8C">两个模型放在一张表里</a></li>
+<li><a href="#6-%E8%A6%81%E5%AF%BC%E5%87%BA%E5%93%AA%E4%BA%9B%E6%95%B0%E6%8D%AE">要导出哪些数据</a></li>
+<li><a href="#7-%E6%80%8E%E4%B9%88%E5%AF%BC%E5%87%BA%E6%8E%A2%E9%92%88%E9%92%A9%E5%AD%90%E4%B8%8E%E6%B3%A8%E6%84%8F%E5%8A%9B%E5%A4%8D%E7%AE%97">怎么导出：探针、钩子与注意力复算</a></li>
+<li><a href="#8-%E6%A0%A1%E9%AA%8C%E6%88%91%E4%BB%AC%E6%8A%93%E5%88%B0%E7%9A%84%E6%95%B0%E6%98%AF%E7%9C%9F%E7%9A%84%E5%90%97">校验：我们抓到的数是真的吗</a></li>
+<li><a href="#9-%E5%8F%AF%E8%A7%86%E5%8C%96%E8%AE%BE%E8%AE%A1%E6%80%8E%E4%B9%88%E6%8A%8A-4096-%E4%B8%AA-token-%E7%94%BB%E6%88%90%E4%B8%80%E7%89%87%E9%A3%8E%E6%99%AF">可视化设计：怎么把 4096 个 token 画成一片风景</a></li>
+<li><a href="#10-%E6%B8%B2%E6%9F%93%E5%AE%9E%E7%8E%B0webgl2-%E5%AE%9E%E4%BE%8B%E5%8C%96">渲染实现：WebGL2 实例化</a></li>
+<li><a href="#11-%E7%9C%8B%E5%88%B0%E4%BA%86%E4%BB%80%E4%B9%88">看到了什么</a></li>
+<li><a href="#12-%E5%B1%80%E9%99%90%E4%B8%8E%E5%AE%83%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E6%92%92%E8%B0%8E">局限与它为什么不撒谎</a></li>
+<li><a href="#13-%E6%9C%AC%E5%9C%B0%E8%BF%90%E8%A1%8C%E9%87%8D%E6%96%B0%E5%AF%BC%E5%87%BA%E4%B8%8E%E9%83%A8%E7%BD%B2">本地运行、重新导出与部署</a></li>
+<li><a href="#14-%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95">踩坑记录</a></li>
+<li><a href="#15-%E7%89%88%E6%9D%83%E4%B8%8E%E8%87%B4%E8%B0%A2">版权与致谢</a></li>
+</ol>
+<hr>
+<h2 id="1-为什么文生图比-llm-难画">1. 为什么文生图比 LLM 难画</h2>
+<p>llm-viz 能做得那么干净，是因为 GPT 的一次推理是<strong>一次前向</strong>：输入 6 个字母，跑一遍，输出 6 个分布。所有张量都在同一时刻存在，把它们按计算顺序摆开就行。</p>
+<p>文生图模型不是这样：</p>
+<p><strong>第一，它不是一次前向，是几十次。</strong> 你要画的是 40 次（Qwen）或 16 次（FLUX）形状完全相同的 Transformer 前向，每次的输入都是上一步的输出。所以时间必须成为一个可拖动的轴，而不能只是&quot;第 N 层的左边&quot;。</p>
+<p><strong>第二，token 不是词，是图像块。</strong> LLM 的 6 个 token 一眼能数完；这里一条序列里有 <strong>4096 个图像 token</strong>（64×64 的潜变量网格），加上 79 或 80 个文本 token。4096 个格子必须排成二维，才能看出&quot;哪里是狐狸、哪里是雪&quot;。</p>
+<p><strong>第三，没有&quot;下一个词&quot;这种可读的输出。</strong> LLM 的输出是词表上的概率，读得懂；这里每一步的输出是一个 64 维（Qwen）或 128 维（FLUX）的速度场，它在潜空间里，人眼看不见。必须先解码，或者投影。</p>
+<p><strong>第四，层数多、参数多。</strong> 16.2B 参数不可能一格一格画。只能&quot;一个张量 = 一个按参数量缩放的盒子&quot;，再把 4096 个 token 的激活铺在盒子上当颜色。</p>
+<p>想清楚这四点之后，问题就变成了一个很具体的工程问题：<strong>导出什么数据，能让浏览器在没有模型权重的情况下，把一个 16B 模型的内部状态画出来？</strong> 这个问题的答案就是整个页面的设计。</p>
+<hr>
+<h2 id="2-环境与加载方式">2. 环境与加载方式</h2>
+<p>全部推理在 <code>a100so03</code>（A100-SXM4-40GB）上完成，环境 <code>/pretrain/zhuxinxin/work/envs/env312</code>：</p>
+<pre tabindex="0"><code>torch 2.11.0+cu128 · diffusers 0.42.1 · transformers 5.20.1
+</code></pre><p>加载方式与 <code>/pretrain/zhuxinxin/work/model_server/adapters.py</code> 里的 <code>Qwenimage21</code>、<code>FLUX3KleinAdapter</code> <strong>完全一致</strong>——这不是为了省事，而是因为照着服务端的真实加载路径走，才能保证看到的架构就是线上跑的那个架构（而不是某个 demo 脚本里简化过的版本）。FLUX 按 <code>infer.sh direct</code> 的做法跳过 PUP（perceptual upsampler），因为文生图不需要它。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PY<span style="color:#f92672">=</span>/pretrain/zhuxinxin/work/envs/env312/bin/python
+</span></span><span style="display:flex;"><span>cd /pretrain/zhuxinxin/work/imgviz_arch
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CUDA_VISIBLE_DEVICES<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span> $PY arch_probe.py  --model qwen --out runs/qwen
+</span></span><span style="display:flex;"><span>CUDA_VISIBLE_DEVICES<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span> $PY arch_probe.py  --model flux --out runs/flux
+</span></span><span style="display:flex;"><span>CUDA_VISIBLE_DEVICES<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span> $PY export_web.py --model qwen --out web/qwen --probe runs/qwen/summary.json
+</span></span><span style="display:flex;"><span>CUDA_VISIBLE_DEVICES<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span> $PY export_web.py --model flux --out web/flux --probe runs/flux/summary.json
+</span></span></code></pre></div><p>两个模型用同一个提示词、同一个 seed（42）、同一个分辨率（1024²）：</p>
+<blockquote>
+<p><em>A photorealistic close-up of a red fox sitting in a snowy pine forest at sunrise, warm golden light on its fur, breath visible in the cold air, holding a small wooden sign in its paws that reads &ldquo;LLM VIZ&rdquo; in white painted letters, shallow depth of field, soft bokeh of snow-covered trees in the background</em></p>
+</blockquote>
+<p>选这个提示词不是随手写的。它同时包含：<strong>一个主体</strong>（狐狸）、<strong>一个可定位的小物体</strong>（木牌）、<strong>一段具体文字</strong>（LLM VIZ）、<strong>三类材质</strong>（毛发 / 雪 / 木）、<strong>一种光照</strong>（日出金光）和<strong>一种景深</strong>（背景虚化）。这些正好是&quot;注意力到底学没学到东西&quot;最好的试金石。</p>
+<hr>
+<h2 id="3-qwen-image-21单流--块因果">3. Qwen-Image-2.1：单流 + 块因果</h2>
+<p>Qwen-Image-2.1 是 <strong>Transfusion 式</strong>的结构：文本和图像 token 在同一个序列里，用同一套权重。</p>
+<pre tabindex="0"><code>提示词 ──Qwen3-VL(36 层)──► 取最后一层（去掉最终 RMSNorm）→ 丢弃 system 段
+                        → encoder_hidden_states [1, 79, 4096]
+                        → txt_in: ZeroCenterRMSNorm → Linear → GELU → Linear
+
+噪声潜变量 [1,64,64,64] ─flatten─► [1, 4096, 64] ─img_in─► [1, 4096, 4096]
+
+拼接：79 个文本 token + 4096 个图像 token = [1, 4175, 4096]
+
+t ─正弦 256 维─► TimestepEmbedding → temb [2, 4096]（第 2 行是 t=0，给文本用）
+                ─modulation: SiLU → Linear(4096→16384)─► 4 份 scale/gate
+× 32 个 QwenImage21TransformerBlock
+    x += tanh(gate1) · Attn( LN(x)·(1+scale1) )
+    x += tanh(gate2) · SwiGLU( LN(x)·(1+scale2) )
+norm_out（只有 scale 的 AdaLN）→ proj_out → 取最后 4096 个 = 速度 v
+</code></pre><p><img src="qwen-block.png" alt="Qwen 的 Transformer block：中间 64×64 的柱子是每层输出的图像 token RMS，前面一排是文本 token，后面一排是每个头分给文本的注意力比例"></p>
+<p>几个读了源码才敢写的设计：</p>
+<p><strong>只有一条流。</strong> 每层 7 个大矩阵——q、k、v、o 四个 4096²，加上 SwiGLU 的 gate/proj（4096→12288）和 out（12288→4096）。<strong>每层 218.1M 参数，32 层占整个 7.12B 的 98.1%。</strong></p>
+<p><strong>调制参数全模型共享。</strong> 有一个 <code>modulation</code> 线性层（4096→16384，约 67M 参数）<strong>所有 32 个 block 共用</strong>，block 自己一个调制参数都没有。这一点和 DiT 系列里每个 block 自带 AdaLN 的做法不同，省下的是 32 × 67M ≈ 2.1B 参数。</p>
+<p><strong>块因果注意力。</strong> 掩码是 <code>(q ≥ k) 或 同一图像</code>：文本 token 严格因果（只能看前面），图像 token 能看全部 79 个文本 token 和整张图。关键在于——<strong>文本 token 用 <code>t=0</code> 的调制</strong>（<code>causal_condition=True</code>），所以它们的 K/V 全程不变。于是第一步预填前缀 KV，后面每步只算 4096 个图像 token：</p>
+<table>
+  <thead>
+      <tr>
+          <th></th>
+          <th>首步</th>
+          <th>之后每步</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>实测单次前向</td>
+          <td>0.49 s</td>
+          <td>0.376 s</td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>三轴 RoPE（16, 56, 56）。</strong> 文本 token 三个轴同时递增，图像 token 的帧轴冻在前文的位置，高/宽轴以 0 为中心铺成网格。</p>
+<p><strong>VAE 是 16× 下采样、64 通道，输出 RGBA。</strong> 这是个小坑：<code>AutoencoderKLQwenImage21</code> 解码出来是 4 通道（带 alpha），存 JPEG 前必须按 pipeline 的做法合成到白底上，否则 <code>PIL</code> 会直接报错。</p>
+<p><img src="qwen-text-encoder.png" alt="Qwen 的文本编码器：36 层 × 79 列，每格是该 token 在该层输出的 RMS（每层单独归一化）"></p>
+<p>文本编码器是 <strong>Qwen3-VL 8.77B</strong>（36 层，hidden 4096，32 头 / 8 KV 头，FFN 12288）。它包含 0.58B 的视觉塔和 0.62B 的 lm_head，文生图时<strong>都不参与</strong>——我们只取最后一层、最后一个 token 之前、丢掉最终 RMSNorm 的隐状态。另外聊天模板会注入一段 14 个 token 的 system prompt，导出时被丢掉了，所以最终是 <strong>79 个文本 token</strong>。</p>
+<hr>
+<h2 id="4-flux3-klein先分流后合流">4. FLUX.3 Klein：先分流、后合流</h2>
+<p>FLUX.3 Klein 是 <strong>MMDiT 式</strong>的两段式：前 5 层各模态独立，后 28 层联合。</p>
+<pre tabindex="0"><code>提示词 ──Qwen3-VL-4B──► 取第 4,8,…,32 共 8 层隐状态，按通道堆叠：8 × 2560 = 20480
+                      → [1, 80, 20480] → context_embedder → [1, 80, 3072]
+
+噪声潜变量 32ch，2×2 打包 → [1, 4096, 128] ─x_embedders.image─► [1, 4096, 3072]
+
+t 与 target_t（本步要跳到哪）各自嵌入后相加 → 逐 token 调制
+
+① 分流 5 层（Flux3ModeTransformerBlock，各模态只在自己内部做自注意力）
+   txt_mode_blocks      ×5 : 文本  [1, 80,   3072]
+   mode_blocks.image    ×5 : 图像  [1, 4096, 3072]
+   mode_blocks.image_cond ×5: 参考图（编辑模式才用，本次未执行）
+   每层：并行结构  x += gate · ( Attn(m) + FF(m) ),  m = LN(x)·(1+scale)+shift
+
+② 合流 28 层（Flux3SingleTransformerBlock）
+   [文本 80 ; 图像 4096] = 4176 个 token 做联合注意力，文本/图像各用自己的调制
+
+③ norm_out（AdaLN）→ proj_out → 速度 v
+</code></pre><p><img src="flux-overview.png" alt="FLUX 的总览：最上面灰色的一排是「参考图分流」，本次文生图没有执行"></p>
+<p><strong>并行块。</strong> 注意力与 FFN 用同一个调制后的输入并行计算再相加，而不是串行两个残差。FFN 是 SwiGLU，<code>linear_in</code> 一次输出 2×9216 再对半分。</p>
+<p><strong>每层 122.7M 参数</strong>：4 个 3072² + 3072×18432 + 9216×3072。合流 28 层占 61.9%，三组分流各占 11.1%。</p>
+<p><strong>四轴 RoPE（t, h, w, l，各 32 维）</strong>，图像部分的 RoPE 缩放了 0.5。</p>
+<p><strong>调制按模态分 6 组</strong>（早期/合流 × image / image_cond / txt），每组一个 3072→9216 的线性层，<strong>逐 token 生效</strong>（不是整批一个标量）。</p>
+<p><strong>流映射蒸馏。</strong> 模型多一个 <code>target_timestep_embedder</code>，它同时知道&quot;现在在 t&quot;和&quot;要跳到哪&quot;。实测 16 步的时间表：</p>
+<pre tabindex="0"><code>1.000 → 0.992 → 0.980 → 0.969 → 0.953 → 0.938 → 0.922 → 0.898
+      → 0.875 → 0.844 → 0.805 → 0.758 → 0.699 → 0.617 → 0.498 → 0.316 → 0
+</code></pre><p>最后一步从 0.316 <strong>直接跳到 0</strong>。对比 Qwen 的 40 步平滑下降表（1.0 → 0.988 → … → 0.068 → 0.020），能看出来这不是&quot;少跑了几步&quot;，而是完全不同的采样范式。</p>
+<p><strong>文本编码用 8 层中间隐状态堆叠</strong>（20480 维），而不是像 Qwen 那样只用最后一层（4096 维）。5 倍宽的输入，这也是后面 FLUX 文本流 RMS 高得多的原因之一。</p>
+<p><strong>VAE 只有 84M</strong>，32 通道潜变量，8× 下采样后再 2×2 打包成 128 通道——所以 <code>x_embedders.image</code> 吃的是 128 维。</p>
+<hr>
+<h2 id="5-两个模型放在一张表里">5. 两个模型放在一张表里</h2>
+<p>全部数字来自 <code>named_parameters()</code> 与真实推理，不是论文或模型卡上抄的。</p>
+<table>
+  <thead>
+      <tr>
+          <th></th>
+          <th>Qwen-Image-2.1</th>
+          <th>FLUX.3 Image Klein</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>文本编码器</td>
+          <td><code>Qwen3VLForConditionalGeneration</code> <strong>8.77B</strong>（36 层，hidden 4096，FFN 12288，32 头 / 8 KV 头）</td>
+          <td><code>Qwen3VLForConditionalGeneration</code> <strong>4.44B</strong>（Qwen3-VL-4B：36 层，hidden 2560，FFN 9728）</td>
+      </tr>
+      <tr>
+          <td>去噪 Transformer</td>
+          <td><code>QwenImage21Transformer2DModel</code> <strong>7.12B</strong>，297 个张量</td>
+          <td><code>Flux3Transformer2DModel</code> <strong>5.55B</strong>，359 个张量</td>
+      </tr>
+      <tr>
+          <td>VAE</td>
+          <td><code>AutoencoderKLQwenImage21</code> <strong>0.338B</strong>（z=64，16×）</td>
+          <td><code>AutoencoderKLFlux2</code> <strong>0.084B</strong>（32ch，8× + 2×2 打包）</td>
+      </tr>
+      <tr>
+          <td>合计</td>
+          <td><strong>≈16.2B</strong></td>
+          <td><strong>≈10.1B</strong></td>
+      </tr>
+      <tr>
+          <td>结构</td>
+          <td>32 层单流，块因果</td>
+          <td>5 层分流 + 28 层合流</td>
+      </tr>
+      <tr>
+          <td>注意力</td>
+          <td>块因果，文本严格因果</td>
+          <td>分流内自注意力 / 合流联合全注意力</td>
+      </tr>
+      <tr>
+          <td>RoPE</td>
+          <td>3 轴（16, 56, 56）</td>
+          <td>4 轴（32, 32, 32, 32）</td>
+      </tr>
+      <tr>
+          <td>调制</td>
+          <td>全模型共享 1 个（4096→16384）</td>
+          <td>按模态 6 组（3072→9216），逐 token</td>
+      </tr>
+      <tr>
+          <td>文本特征</td>
+          <td>最后一层，4096 维</td>
+          <td>8 层堆叠，20480 维</td>
+      </tr>
+      <tr>
+          <td>序列长度</td>
+          <td>79 + 4096 = 4175</td>
+          <td>80 + 4096 = 4176</td>
+      </tr>
+      <tr>
+          <td>去噪步数</td>
+          <td>40</td>
+          <td>16（流映射蒸馏）</td>
+      </tr>
+      <tr>
+          <td>生成耗时</td>
+          <td><strong>16.2 s</strong></td>
+          <td><strong>5.5 s</strong></td>
+      </tr>
+      <tr>
+          <td>单次 Transformer</td>
+          <td>0.38 s（首步 0.49 s）</td>
+          <td>0.28 s</td>
+      </tr>
+      <tr>
+          <td>文本编码 / VAE 解码</td>
+          <td>0.21 s / 0.41 s</td>
+          <td>0.39 s / 0.37 s</td>
+      </tr>
+      <tr>
+          <td>显存峰值</td>
+          <td><strong>36.8 GB</strong></td>
+          <td><strong>21.2 GB</strong></td>
+      </tr>
+      <tr>
+          <td>加载耗时</td>
+          <td>31 s</td>
+          <td>21 s</td>
+      </tr>
+  </tbody>
+</table>
+<p>同一个提示词、同一块 A100-40GB：FLUX 快了 <strong>2.9 倍</strong>，显存少了 <strong>42%</strong>，参数量少了 <strong>38%</strong>。差别不只是&quot;步数少&quot;，它每一层的参数也少（122.7M vs 218.1M），文本编码器也小一半。</p>
+<hr>
+<h2 id="6-要导出哪些数据">6. 要导出哪些数据</h2>
+<p>这是整个项目真正的设计环节。约束有三条：</p>
+<ol>
+<li><strong>浏览器里不能有模型权重。</strong> 16B 参数是 32 GB，不可能下载。</li>
+<li><strong>不能导 4096 个格子 × 4175 个 token × 32 层。</strong> 那是几百 GB。</li>
+<li><strong>但每一格都必须是真的数。</strong> 一旦开始&quot;示意&quot;，这个页面就失去了存在意义。</li>
+</ol>
+<p>于是把&quot;真&quot;落实到三处可验证的地方，其余降采样：</p>
+<table>
+  <thead>
+      <tr>
+          <th>数据</th>
+          <th>真实性</th>
+          <th>体积</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>final.jpg</code></td>
+          <td>最终潜变量经 <strong>VAE 真实解码</strong></td>
+          <td>768²</td>
+      </tr>
+      <tr>
+          <td><code>steps/x0_XX.jpg</code></td>
+          <td>每步 <code>x0 = x_t − t·v</code>，<strong>真实 VAE 解码</strong></td>
+          <td>256² × 步数</td>
+      </tr>
+      <tr>
+          <td><code>steps/xt_XX.jpg</code></td>
+          <td>潜变量的<strong>线性 RGB 投影</strong>（示意，见第 12 节）</td>
+          <td>256² × 步数</td>
+      </tr>
+      <tr>
+          <td><code>act/act_XX.png</code></td>
+          <td>该步每个 block 输出的 <strong>64×64 图像 token RMS</strong>，8 位灰度图集</td>
+          <td>每格 64²</td>
+      </tr>
+      <tr>
+          <td><code>attn/sSS_bBB.png</code></td>
+          <td>选定步/层上<strong>复算的 softmax</strong>，词 → 区域</td>
+          <td>20 词 × 64²</td>
+      </tr>
+      <tr>
+          <td><code>meta.json</code></td>
+          <td>形状、参数量、时间表、逐步逐层统计、性能实测</td>
+          <td>几百 KB</td>
+      </tr>
+  </tbody>
+</table>
+<p>导出后 Qwen 8.2 MB、FLUX 4.5 MB。全部是可公开的统计量与生成结果，<strong>不含任何权重</strong>。</p>
+<p><code>act_XX.png</code> 是个 8 列 × N 行的图集（R8 灰度），tile 顺序是 <code>[&quot;x_t&quot;, …所有 block…, &quot;v&quot;]</code>——Qwen 34 个、FLUX 35 个。用一张 PNG 装下所有层，既省请求也让 GPU 端可以一次上传成纹理。</p>
+<hr>
+<h2 id="7-怎么导出探针钩子与注意力复算">7. 怎么导出：探针、钩子与注意力复算</h2>
+<p>导出分两步。</p>
+<h3 id="arch_probepy先摸清结构">arch_probe.py：先摸清结构</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>python arch_probe.py --model qwen --out runs/qwen
+</span></span></code></pre></div><p>它做四件事：</p>
+<ol>
+<li><strong>按服务端的方式加载模型</strong>，然后 <code>named_parameters()</code> 走一遍，把每个张量的名字和形状记下来（<code>transformer_tensors.json</code>）。Qwen 297 个、FLUX 359 个。</li>
+<li><strong>给每个 module 挂前向钩子</strong>，记录它第一次被调用时的输入/输出形状（<code>first_call_shapes</code>）。这就是页面上那些箭头和形状标注的来源。</li>
+<li><strong>跑一次完整推理</strong>，记录每步耗时、VAE 解码耗时、显存峰值。</li>
+<li><strong>存下每步的潜变量</strong>（<code>latents.pt</code>），供后面复用。</li>
+</ol>
+<p>钩子这里踩过一个坑：一开始我用 lambda 返回一个元组想&quot;改写&quot;输出，结果 PyTorch 把元组当成<strong>替换参数</strong>传给了 forward。改成返回 <code>None</code> 的函数就好了。</p>
+<h3 id="export_webpy再抓网页要的东西">export_web.py：再抓网页要的东西</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>python export_web.py --model qwen --out web/qwen --probe runs/qwen/summary.json
+</span></span></code></pre></div><p>它跟 <code>arch_probe</code> 用同样的加载方式，但挂了更多钩子：</p>
+<p><strong>激活。</strong> 每个 block 的 forward 输出取出图像 token 那 4096 行，reshape 成 64×64，算每个 token 的 RMS，量化成 8 位存进图集。<strong>每张图单独归一化</strong>——因为不同层的 RMS 差了好几个数量级（见第 5 节和第 11 节），统一归一化的话中间层会变成全黑。</p>
+<p><strong>注意力。</strong> 这一步是整个项目最费劲的地方。</p>
+<p>diffusers 的注意力实现不会把 attn 矩阵交出来，而且开了 <code>scaled_dot_product_attention</code> 之后根本拿不到。所以不能&quot;顺便记一下&quot;，只能<strong>按模型自己的公式重算</strong>：</p>
+<pre tabindex="0"><code>1. 取该 block 的 q 或 k 的投影前输入（通过钩子拿到 hidden_states）
+2. 用该 block 自己的 RMSNorm 归一化 q、k
+3. 用该 block 自己的 RoPE 位置编码旋一遍
+4. q @ kᵀ / sqrt(d) → softmax（只在&#34;文本 key&#34;上取，因为我们要的是&#34;图像 query 分给文本多少&#34;)
+5. 32 个头取平均 → 64×64
+</code></pre><p>只有这样才能得到<strong>和模型内部一模一样</strong>的注意力。代价是必须一步步重跑，而且 Qwen 得关掉前缀 KV 缓存（<code>use_kv_cache=False</code>）——数值完全不变，只是每步多算 79 个文本 token，所以导出耗时 28.6 s 比探针的 16.2 s 长。</p>
+<p>为了控制体积，只抓 <strong>5 个步 × 5 个 block</strong>：</p>
+<table>
+  <thead>
+      <tr>
+          <th></th>
+          <th>步</th>
+          <th>层</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Qwen</td>
+          <td>0, 5, 10, 20, 39</td>
+          <td>0, 8, 16, 24, 31</td>
+      </tr>
+      <tr>
+          <td>FLUX</td>
+          <td>0, 2, 5, 10, 15</td>
+          <td>0, 7, 14, 21, 27</td>
+      </tr>
+  </tbody>
+</table>
+<p>每一步、每一层都把<strong>全部 20 个词</strong>的热图横向拼成一张 1280×64 的条带。拖时间轴和切层的时候，页面会自动吸附到最近的一个抓取点。</p>
+<p>另外还导出了两个&quot;总账&quot;指标：</p>
+<ul>
+<li><strong><code>txt_frac</code></strong>：这一层所有图像 query 的注意力里，分给文本 token 的总比例（等价于&quot;这一层还在看提示词吗&quot;）。</li>
+<li><strong><code>head_frac</code></strong>：32（或 24）个注意力头里，各自分给文本的比例——画成 block 后面那排柱子。</li>
+</ul>
+<hr>
+<h2 id="8-校验我们抓到的数是真的吗">8. 校验：我们抓到的数是真的吗</h2>
+<p>这是整个流程里我最在意的部分。可视化最容易犯的错是&quot;看起来挺像，其实是编的&quot;。所以做了三层校验。</p>
+<p><strong>第一层：x₀ 与 pipeline 输出逐像素比对。</strong></p>
+<p>每步的 <code>x0 = x_t − t·v</code> 真的送进 VAE 解码，然后与 pipeline 自己产出的最终图比较（0–255 尺度）：</p>
+<table>
+  <thead>
+      <tr>
+          <th></th>
+          <th>平均绝对误差</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Qwen-Image-2.1</td>
+          <td><strong>0.299</strong></td>
+      </tr>
+      <tr>
+          <td>FLUX.3 Klein</td>
+          <td><strong>0.265</strong></td>
+      </tr>
+  </tbody>
+</table>
+<p>即 &lt;0.12%。说明抓到的 <code>x_t</code> 和 <code>v</code> 与模型真实的计算路径完全对得上——只要有一个钩子挂错了位置，这个数会立刻变成几十。</p>
+<p><strong>第二层：注意力有没有语义。</strong></p>
+<p>如果复算的注意力公式错了（比如 RoPE 应用错了轴，或者忘了 QK-Norm），热图会退化成一片均匀的雾。实际上：</p>
+<p><img src="qwen-attn-llm.png" alt="Qwen：词 &ldquo;LLM&rdquo; 的注意力，集中在狐狸举的木牌上"></p>
+<p><code>LLM</code>、<code>VIZ</code> 两个词的热图在画面中央偏上、正好是木牌的位置出现两团高亮；<code>fox</code> 勾出狐狸的轮廓；<code>paws</code> 落在狐狸胸前两只爪子上；<code>trees</code>、<code>background</code> 落在四周虚化的背景。同时，同一张热图里右下角和边缘也有零散的高柱——那是背景 bokeh，也说得通。</p>
+<p>FLUX 那边同样成立：</p>
+<p><img src="flux-attn-fox.png" alt="FLUX：词 &ldquo;fox&rdquo; 的注意力"></p>
+<p><strong>第三层：步与层之间的连续性。</strong></p>
+<p><code>txt_frac</code> 随层数的变化必须是连续的。实测 Qwen 的第 0 层文本注意力占比高达 0.82（第一层几乎是&quot;把提示词抄进图像 token&quot;），第 1 层骤降到 0.15，然后在中层升到 0.42 左右，深层又降回 0.2–0.3。这个形状与&quot;浅层写入语义、中层整合、深层收敛到速度场&quot;的直觉一致。如果导出脚本有 bug，这条曲线会是锯齿状的。</p>
+<hr>
+<h2 id="9-可视化设计怎么把-4096-个-token-画成一片风景">9. 可视化设计：怎么把 4096 个 token 画成一片风景</h2>
+<p>有了数据，剩下的问题是排版。llm-viz 的经验是：<strong>一个张量一个盒子，把序列方向摊成平面。</strong></p>
+<h3 id="场景布局">场景布局</h3>
+<p><img src="flux-blocks.png" alt="FLUX 的 block 章节"></p>
+<p>从左上到右下：</p>
+<ol>
+<li><strong>文本编码器</strong>（最左）：36 层竖着摞，每层一条 79/80 个 token 的细柱。</li>
+<li><strong>文本投影</strong>（<code>txt_in</code> / <code>context_embedder</code>）：一个宽扁的盒子，按参数量缩放。</li>
+<li><strong>输入 x_t</strong>：一张 64×64 的格子板。</li>
+<li><strong>时间步嵌入 + 调制</strong>：在 Qwen 里只有<strong>一个</strong>共享调制层，所以它孤零零地站在场景的左边；FLUX 有 6 组，所以这里画的是&quot;当前 t + 目标 t&quot;两个嵌入之和。</li>
+<li><strong>Transformer blocks</strong>：一行 8 个，每个 block 一块 64×64 的格子板。</li>
+<li><strong>输出 v</strong>、<strong>VAE 解码器</strong>、<strong>最终图像平面</strong>。</li>
+</ol>
+<p>FLUX 多一排：最上面灰色的 <strong>参考图分流</strong>（<code>image_cond</code> 5 层）。文生图模式不执行它，所以画成灰色平板并标注&quot;文生图未执行&quot;——这个&quot;空着的分支&quot;本身就是一种信息。</p>
+<p>每个 block 的格子板周围还有三样东西：</p>
+<ul>
+<li><strong>前面一排（79/80 根柱子）</strong>：文本 token 在这一层的激活。</li>
+<li><strong>后面一排（32/24 根柱子）</strong>：每个注意力头分给文本的比例（<code>head_frac</code>）。</li>
+<li><strong>左边一列扁板</strong>：这一层的 7 个权重矩阵，<strong>按参数量缩放</strong>。Qwen 是 4 个 attention + 3 个 MLP，比例 1:1:1:1:3:3:3；FLUX 是 4 个 attention + 2 个 FFN，比例 1:1:1:1:6:3。7 个方块之间真的能看出 SwiGLU 的 <code>12288/4096 = 3</code> 倍宽。</li>
+</ul>
+<h3 id="颜色与高度">颜色与高度</h3>
+<p>三个调色板，各管一件事：</p>
+<ul>
+<li><strong>蓝</strong>：图像 token 的激活 RMS（浅蓝 → 深蓝）。</li>
+<li><strong>橙</strong>：文本 token 的激活。</li>
+<li><strong>洋红</strong>：注意力。</li>
+</ul>
+<p>格子高度是 <code>h = h0 + hmax · f(val)</code>，其中 <code>f</code> 是幂函数（激活用 <code>val^1.4</code>，注意力用 <code>val^0.8</code>）。指数是必需的：注意力分布极度长尾，线性映射会让 99% 的格子贴地、1% 的格子顶到天花板；<code>val^0.8</code> 把长尾压下来，才看得见&quot;两团高亮&quot;而不是&quot;两根针&quot;。</p>
+<p>在注意力模式里，高度还会乘 1.8——因为注意力模式的格子只有 4096 个，比总览里稀疏得多，需要更夸张才读得出来。</p>
+<h3 id="相机">相机</h3>
+<p><code>frame(box, {yaw, pitch, pad})</code> 不是简单地取包围球半径，而是<strong>把包围盒沿相机的两个屏幕轴投影</strong>：</p>
+<pre tabindex="0"><code>across = sx·|cos yaw| + sz·|sin yaw|
+along  = (sx·|sin yaw| + sz·|cos yaw|)·sin pitch + sy·cos pitch
+dist   = pad · max(across/2/th, along/2/tv) + max(sx, sz)·0.08
+</code></pre><p>这样当相机俯视一张 64×64 的平板时，距离会正确收敛，而不是被包围球的半径推得远远的（这是第一版最大的问题：所有章节都像在看一粒米）。</p>
+<hr>
+<h2 id="10-渲染实现webgl2-实例化">10. 渲染实现：WebGL2 实例化</h2>
+<p>整个渲染器 232 行，没有依赖。</p>
+<p><strong>每个格子一个立方体实例</strong>：Qwen 14.6 万个、FLUX 15.0 万个（39 / 46 个组）。实例数据 12 个 float：</p>
+<pre tabindex="0"><code>x, y, z, s   |   src, u, v, palette   |   groupId, hmax, h0, staticColor
+</code></pre><p><strong>顶点着色器从三张纹理取值</strong>：</p>
+<table>
+  <thead>
+      <tr>
+          <th>纹理</th>
+          <th>格式</th>
+          <th>内容</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>图集</td>
+          <td><code>R8</code></td>
+          <td>某个 block 在某一步的 64×64 激活（8 位列宽）</td>
+      </tr>
+      <tr>
+          <td>标量</td>
+          <td><code>R32F</code></td>
+          <td>逐帧变化的单值，如时间轴上的 t</td>
+      </tr>
+      <tr>
+          <td>状态</td>
+          <td><code>RGBA32F</code>，每组一张 64×64</td>
+          <td>r=亮度（变暗系数）、g=揭示进度、b=调色板覆盖（或 −1）、a=高度缩放</td>
+      </tr>
+  </tbody>
+</table>
+<p>状态纹理是 llm-viz 那套&quot;逐组变暗 / 逐格揭示&quot;动画的复用：讲某一章时，非重点组把 <code>r</code> 调到 0.45 并<strong>压平高度</strong>（<code>hmax</code> 乘 0.25），被讲的组保持满高。这不是特异功能，只是每帧上传一张 64×64 的浮点纹理。</p>
+<p>立方体 6 个面、36 个顶点，逆时针绕序 <code>[0,2,1,0,3,2]</code>，开 <code>CULL_FACE</code>。第一版我把绕序写反了，结果所有方块看起来都是空心的——你看到的是内壁。</p>
+<p>悬停拾取不用射线求交库，而是<strong>沿射线步进</strong>：以格子高度为单位往前走，每一步把世界坐标换成格子索引，再看该处高度是否超过射线当前高度。对 15 万个立方体来说，这比逐实例求交快得多。</p>
+<hr>
+<h2 id="11-看到了什么">11. 看到了什么</h2>
+<p>把所有数据摆在一起之后，有几件事挺有意思。</p>
+<p><strong>构图在第 0 步就定了。</strong> 这是最反直觉的。第 0 步（纯噪声）的 <code>x₀</code> 估计里，狐狸已经居中、背景已经是雪林和中景虚化——</p>
+<p><img src="qwen-steps.png" alt="Qwen 的 40 步：上行是当前潜变量 x_t，下行是模型预测的最终图 x0"></p>
+<p>之后 39 步主要在补毛发、雪粒、木牌上的笔画。这说明模型把大部分&quot;决策&quot;放在了第一步：位置、构图、语义关系全在一次前向里定好，后续只是细化。</p>
+<p><strong>FLUX 的文字出现得更早。</strong> 蒸馏版在<strong>第 2 步</strong>（t=0.98）就能看出 &ldquo;LLM VIZ&rdquo; 的字样，Qwen 要到第 4 步左右。16 步不是&quot;40 步的抽样&quot;——流映射蒸馏学的是一种&quot;一步到位&quot;的步进策略，所以早期步做出的判断更激进。</p>
+<p><img src="flux-steps.png" alt="FLUX 的 16 步"></p>
+<p><img src="flux-denoise.png" alt="FLUX 的「一步步去噪」章节：左边是速度场 v，右边是这一步 x0 的 VAE 解码"></p>
+<p><strong>x_t 在 t&gt;0.6 时基本还是噪声。</strong> 看上行：前面十几步的 <code>x_t</code> 几乎是纯噪点。信息不是&quot;存在当前状态里逐步变清晰&quot;，而是&quot;模型每一步都预测一个干净的目标，然后沿这个方向走一小段&quot;。这也解释了为什么只要 <code>x₀</code> 预测稳定，步数少也能出好图。</p>
+<p><strong>FLUX 的文本流激活是图像流的几十倍。</strong></p>
+<table>
+  <thead>
+      <tr>
+          <th>流</th>
+          <th>整体 RMS</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>FLUX 文本分流 0→4</td>
+          <td>575 → 2013（与 t 无关）</td>
+      </tr>
+      <tr>
+          <td>FLUX 图像分流 0→4</td>
+          <td>4–30</td>
+      </tr>
+      <tr>
+          <td>FLUX 合流 0→27</td>
+          <td>23–56</td>
+      </tr>
+      <tr>
+          <td>Qwen block 0→31</td>
+          <td>4–25</td>
+      </tr>
+  </tbody>
+</table>
+<p>文本 token 用 <code>t=0</code> 调制，与去噪步无关，所以整列是同一个数；而输入是 8 层隐状态的堆叠（20480 维），量级天然就大。<strong>所以页面上文本柱子和图像格子用了不同的调色板和各自的归一化</strong>——否则要么文本柱子全顶到头，要么图像一片平。</p>
+<p><strong>Qwen 的中层有一段&quot;被抹平&quot;的区域。</strong></p>
+<p><img src="qwen-token-rms.png" alt="Qwen 每层图像 token 的 RMS 热图（最后一步）"></p>
+<p>block 16–20 的热图几乎是均匀的，整体 RMS 也掉到 4–5；到 block 24 之后轮廓又重新出现。浅层（0–12）能清楚看到牌子和狐狸的轮廓，深层又模糊成一团——因为最后一层输出的已经不是&quot;图&quot;，而是&quot;速度场&quot;。</p>
+<p>FLUX 合流的中间层（3–23）则一直很&quot;结构化&quot;，狐狸的眼睛、鼻子和牌子始终最亮。</p>
+<p><img src="flux-token-rms.png" alt="FLUX 每层图像 token 的 RMS 热图"></p>
+<p>两条路径的差别其实能对上架构：Qwen 是 32 层同构单流，信息被反复读写同一个残差流；FLUX 是先在自己模态里打磨 5 层、再合流 28 层，联合注意力天然更&quot;局部&quot;。</p>
+<p><strong>注意力是一个很好的&quot;模型在找什么&quot;的探针。</strong> 同一个词在不同层、不同步的热图完全不一样：早期层里，<code>LLM</code> 可能只在一片区域泛泛地亮；到合流 14 层，它会精确地收到木牌上的那两行笔画。这也侧面说明了为什么这两代模型要多层、多步——单层的注意力不足以定位到这么小的区域。</p>
+<p><img src="flux-attn-strip.png" alt="FLUX 全部 20 个词在同一层上的注意力条带"></p>
+<hr>
+<h2 id="12-局限与它为什么不撒谎">12. 局限与它为什么不撒谎</h2>
+<p>诚实地说清楚哪些地方不是严格线性的、哪些是抽样的：</p>
+<ol>
+<li><strong><code>xt_XX.jpg</code> 只是示意。</strong> 潜变量有 64（Qwen）或 128（FLUX）个通道，没法直接显示。这里用最小二乘拟合了一个线性 RGB 映射（以最终图像缩到 64×64 为目标），平均误差 Qwen 0.024 / FLUX 0.053（0–1 尺度）。能看构图，颜色不准。<strong>要看&quot;模型认为的图&quot;，请看 <code>x0_XX.jpg</code>，那是真的 VAE 解码。</strong></li>
+<li><strong>激活图每格单独归一化。</strong> 颜色只表示同一层内 4096 个图像 token 之间的相对强弱，不能跨层比较绝对大小。要看绝对量级，用章节里的逐步 RMS 曲线。</li>
+<li><strong>文本 token 的激活只抓了第一步和最后一步。</strong> 文本 token 用 <code>t=0</code> 调制，与步数无关，中间步是插值显示的。</li>
+<li><strong>注意力只抓了 5 步 × 5 层。</strong> 全量是 40 步 × 32 层 × 32 头 × 4175 个 token。</li>
+<li><strong>方块高度做了截断与压缩。</strong> <code>hmax</code> 和幂函数让 4096 个格子在一个屏幕上可读；没有任何一个维度是严格线性的。</li>
+<li><strong>耗时是单卡裸跑，不含加载。</strong> 也没有用 <code>torch.compile</code>、没开 <code>bf16</code> 之外的低精度、没做 batch。这是&quot;这个模型在这块卡上跑一次&quot;的数字，不是&quot;这个模型的性能上限&quot;。</li>
+</ol>
+<p>第 3–6 条都是&quot;少画一点&quot;，而不是&quot;画错一点&quot;——每一格存在的数都是真的。这是我觉得这类可视化唯一站得住的立场。</p>
+<hr>
+<h2 id="13-本地运行重新导出与部署">13. 本地运行、重新导出与部署</h2>
+<h3 id="本地看">本地看</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cd static <span style="color:#f92672">&amp;&amp;</span> python3 -m http.server <span style="color:#ae81ff">8000</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># http://localhost:8000/image-viz/            默认 Qwen-Image-2.1</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># http://localhost:8000/image-viz/?model=flux  FLUX.3 Klein</span>
+</span></span></code></pre></div><p>必须通过 HTTP 访问（<code>file://</code> 下 ES 模块和 <code>fetch</code> 会被浏览器拦截），浏览器需支持 WebGL2。</p>
+<h3 id="重新导出">重新导出</h3>
+<p>见第 2 节。三个脚本都在 <a href="https://github.com/sunCityDaa/sunCityDaa.github.io/tree/master/tools/image-viz"><code>tools/image-viz/</code></a>：</p>
+<table>
+  <thead>
+      <tr>
+          <th>脚本</th>
+          <th>作用</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>arch_probe.py</code></td>
+          <td>结构探针：张量名字/形状、首次调用形状、耗时、显存、逐步潜变量</td>
+      </tr>
+      <tr>
+          <td><code>export_web.py</code></td>
+          <td>网页数据：x0/x_t、激活图集、词→区域注意力、VAE 解码校验</td>
+      </tr>
+      <tr>
+          <td><code>montage.py</code></td>
+          <td>报告用的拼图与热图</td>
+      </tr>
+  </tbody>
+</table>
+<p>换提示词只需要 <code>--prompt</code>，换 seed 只需要 <code>--seed</code>。词表是从分词结果里自动挑的（去掉标点和纯空格 token），所以换提示词不需要改代码。</p>
+<h3 id="改讲解">改讲解</h3>
+<p>只改 <code>static/image-viz/js/walkthrough.js</code>：<code>html</code> 改文字，<code>focus</code> 改高亮哪些组，<code>cam</code> 改相机，<code>step</code> 改停在哪一步。</p>
+<h3 id="调试接口">调试接口</h3>
+<p>页面加载后，控制台里：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-js" data-lang="js"><span style="display:flex;"><span><span style="color:#a6e22e">__imgviz</span>.<span style="color:#a6e22e">gotoChapter</span>(<span style="color:#ae81ff">7</span>)      <span style="color:#75715e">// 跳到第 8 章「词 → 图像区域」
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">__imgviz</span>.<span style="color:#a6e22e">setStep</span>(<span style="color:#ae81ff">20</span>)         <span style="color:#75715e">// 切到第 20 步（吸附到最近的抓取步）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">__imgviz</span>.<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">blocks</span>     <span style="color:#75715e">// 当前模型每一层的参数与形状
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">__imgviz</span>.<span style="color:#a6e22e">CHAPTERS</span>.<span style="color:#a6e22e">map</span>(<span style="color:#a6e22e">c</span> =&gt; <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">title</span>)
+</span></span></code></pre></div><h3 id="部署">部署</h3>
+<p>本站的 <code>public/</code> 是提交进仓库的构建产物，GitHub Pages 从 <code>gh-pages</code> 分支发布。改完内容后：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>hugo --cleanDestinationDir      <span style="color:#75715e"># 需要 extended 版本 + Tailwind v4 CLI</span>
+</span></span></code></pre></div><p><code>static/image-viz/</code> 会被原样复制到 <code>public/image-viz/</code>，这篇文章生成到 <code>public/posts/image-viz/</code>。</p>
+<hr>
+<h2 id="14-踩坑记录">14. 踩坑记录</h2>
+<ol>
+<li><strong>Qwen 的 VAE 输出 4 通道。</strong> <code>AutoencoderKLQwenImage21</code> 解码出来带 alpha，直接存 JPEG 会炸。按 pipeline 的做法合成到白底上才对，否则整张图会偏色。</li>
+<li><strong>注意力拿不到。</strong> diffusers 开了 SDPA 之后不返回 attn 矩阵，<code>output_attentions=True</code> 也只对一部分实现有效。最后只能按公式复算——而这反而是最可靠的，因为它顺便证明了我们对 QK-Norm 和 RoPE 的理解是对的。</li>
+<li><strong>复算注意力要用对 RoPE 的轴。</strong> 四个轴里如果错一个，热图会立刻变成均匀噪声。第一次就错了：把帧轴和高度轴弄反了，<code>fox</code> 的热图变成了棋盘格。</li>
+<li><strong>关掉 KV 缓存会让导出变慢。</strong> 但数值一点不变（<code>use_kv_cache=False</code> 只是每步多算文本 token），所以这是个纯耗时问题，不是正确性问题。</li>
+<li><strong>钩子不能返回元组。</strong> 返回 <code>None</code> 是&quot;只观察&quot;，返回元组会被当成&quot;替换前向参数&quot;。</li>
+<li><strong>每层单独归一化是必须的。</strong> 第一次全模型统一归一化，block 16–20 全黑、最后一层全白，什么也看不见。</li>
+<li><strong>相机被包围球害了。</strong> 第一版所有章节都像在看一粒米。改成按屏幕轴投影包围盒之后才对。</li>
+<li><strong>立方体绕序写反 = 空心方块。</strong> 你看的是内壁。修好之后才想起还缺一个底面。</li>
+<li><strong><code>git commit-tree</code> 报 &ldquo;empty ident&rdquo;。</strong> 在 orphan 提交里手写树的时候，忘了设 <code>GIT_AUTHOR_NAME</code> / <code>GIT_COMMITTER_EMAIL</code>。</li>
+<li><strong>写文件必须指定 UTF-8。</strong> 导出脚本在 a100 的默认 locale 下写中文注释会撞上 latin-1 编码错误。</li>
+</ol>
+<hr>
+<h2 id="15-版权与致谢">15. 版权与致谢</h2>
+<ul>
+<li>
+<p><strong>Qwen-Image-2.1</strong> 由通义实验室（Hangzhou Tongyi Laboratory Technology Co., Ltd.）发布，许可证为 <strong>Qwen Research License Agreement</strong>（仅限非商业研究/评估用途）。按协议第 3(c) 条，此处声明：</p>
+<blockquote>
+<p>Qwen is licensed under the Qwen RESEARCH LICENSE AGREEMENT, Copyright (c) 2026 Hangzhou Tongyi Laboratory Technology Co., Ltd. All Rights Reserved.</p>
+</blockquote>
+</li>
+<li>
+<p><strong>FLUX.3 Image Klein</strong> 由 Black Forest Labs Inc. 发布，许可证为 <strong>FLUX Kommunity License v1.0</strong>。按协议第 3(b) 条，此处声明：</p>
+<blockquote>
+<p>This FLUX Model is licensed by Black Forest Labs Inc. under the FLUX Kommunity License. Copyright Black Forest Labs Inc. IN NO EVENT SHALL BLACK FOREST LABS INC. BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH USE OF THIS MODEL.</p>
+</blockquote>
+</li>
+<li>
+<p><strong>本页不包含、也不分发任何模型权重。</strong> 展示的是模型输出（图像）与统计量；按两份许可证，输出不构成模型的衍生作品。</p>
+</li>
+<li>
+<p><strong>AI 生成内容声明</strong>：本页与本文中的所有图像均由上述模型生成，是合成图像而非真实照片。</p>
+</li>
+<li>
+<p>本站为非商业的个人博客，符合两个许可证的非商业使用条款。</p>
+</li>
+<li>
+<p>视觉风格借自 <a href="https://bbycroft.net/llm">Brendan Bycroft 的 LLM Visualization</a>（MIT）——这是我为它做的姊妹篇；本页代码为重新编写。</p>
+</li>
+<li>
+<p>推理环境、模型权重与 <code>adapters.py</code> 由 <code>zhuxinxin</code> 提供；实测在 <code>a100so03</code> 上完成。</p>
+</li>
+</ul>
+<p>完整许可证文本见 <a href="https://github.com/sunCityDaa/sunCityDaa.github.io/blob/master/static/image-viz/LICENSE-THIRD-PARTY.md"><code>static/image-viz/LICENSE-THIRD-PARTY.md</code></a>。</p>
+
+    </div>
+
+    
+    <div class="px-8 pb-2 text-sm text-gray-500 flex items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+      </svg>
+      Last updated on 2026-11-17
+    </div>
+    
+
+    <footer class="px-8 py-6 bg-gray-50 border-t border-gray-100">
+      
+  <div class="tags-container">
+    <div class="text-gray-700 font-medium mb-2">Tags:</div>
+    <div class="flex flex-wrap gap-2">
+        <a href="/tags/%E6%96%87%E7%94%9F%E5%9B%BE/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          文生图
+        </a>
+        <a href="/tags/diffusion/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          Diffusion
+        </a>
+        <a href="/tags/transfusion/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          Transfusion
+        </a>
+        <a href="/tags/qwen-image/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          Qwen-Image
+        </a>
+        <a href="/tags/flux/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          FLUX
+        </a>
+        <a href="/tags/transformer/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          Transformer
+        </a>
+        <a href="/tags/webgl/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          WebGL
+        </a>
+        <a href="/tags/%E5%8F%AF%E8%A7%86%E5%8C%96/" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-labelledby="tagIconTitle" role="img">
+            <title id="tagIconTitle">Tag</title>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          可视化
+        </a>
+    </div>
+  </div>
+
+      
+      
+      <div class="mt-6 flex justify-center">
+        <a href="/" class="inline-flex items-center text-gray-600 hover:text-blue-600 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to Home
+        </a>
+      </div>
+    </footer>
+  </article>
+
+  
+  <div class="max-w-4xl mx-auto mt-8 bg-white rounded-lg shadow-md overflow-hidden" style="--tw-prose-body: #374151; --tw-prose-headings: #111827; --tw-prose-links: #2563eb; --tw-prose-links-hover: #1d4ed8; --tw-prose-code-bg: #f3f4f6; color: #374151; background-color: #ffffff;">
+    
+ 
+  </div>
+
+    </main>
+  </div>
+  
+  <footer class="w-full max-w-4xl mx-auto px-6 overflow-x-auto sm:overflow-visible">
+    <div class="py-8 border-t border-gray-200 bg-gray-50 shadow-inner mt-10">
+  <div class="container mx-auto px-4 max-w-4xl">
+    
+     
+     
+       
+         
+       
+     
+       
+         
+       
+     
+       
+         
+       
+    
+
+    
+    <div class="flex justify-center space-x-8">
+      
+      
+      <div class="transform transition duration-200 hover:scale-110">
+        <a
+          href="https://github.com/sunCityDaa"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-gray-600 hover:text-gray-900"
+          aria-label="GitHub"
+        >
+          <svg
+            class="h-7 w-7"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </a>
+      </div>
+      
+
+      
+      
+
+      
+      
+      <div class="transform transition duration-200 hover:scale-110">
+        <a
+          href="mailto:2367758021@qq.com"
+          rel="noopener noreferrer"
+          class="text-gray-600 hover:text-gray-900"
+          aria-label="邮箱"
+        >
+          <svg
+            class="h-7 w-7"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z"
+            />
+            <path
+              d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z"
+            />
+          </svg>
+        </a>
+      </div>
+      
+    </div>
+
+    <div class="text-center mt-6 text-sm text-gray-500">
+      &copy; 2026 sunCityDaa Website | Powered by <a href="https://github.com/Daucloud/hugo-theme-void" class="text-gray-600 hover:text-gray-900 hover:underline">hugo-theme-void</a> | <span id="busuanzi_container_site_pv" style="display: none;">Total visits: <span id="busuanzi_value_site_pv" class="text-gray-600"></span></span>
+    </div>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  </div>
+</div>
+
+  </footer>
+</body>
+</html>
