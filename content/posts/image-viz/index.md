@@ -540,7 +540,7 @@ cd static && python3 -m http.server 8000
 
 ### 重新导出
 
-见第 2 节。三个脚本都在 [`tools/image-viz/`](https://github.com/sunCityDaa/sunCityDaa.github.io/tree/master/tools/image-viz)：
+见第 2 节。四个脚本都在 [`tools/image-viz/`](https://github.com/sunCityDaa/sunCityDaa.github.io/tree/master/tools/image-viz)：
 
 | 脚本 | 作用 |
 |---|---|
