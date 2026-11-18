@@ -22,8 +22,8 @@
 | `js/renderer.js` | WebGL2 实例化渲染：每个格子一个立方体实例，顶点着色器从三张纹理取值（激活图集 R8、标量 R32F、每组的 64×64 状态纹理）决定高度与颜色；光照调色板 + 纹理四边形 |
 | `js/walkthrough.js` | 11 个章节：标题、中文正文、高亮哪些组、相机对准哪里、当前步与模式 |
 | `js/main.js` | 组装：加载 `meta.json` 与全部图片 → 建场景 → 渲染；章节导航、相机控制、悬停拾取、播放 |
-| `data/qwen/` | Qwen-Image-2.1 的导出数据（8.5 MB） |
-| `data/flux/` | FLUX.3 Image Klein 的导出数据（4.7 MB） |
+| `data/qwen/` | Qwen-Image-2.1 的导出数据（8.2 MB） |
+| `data/flux/` | FLUX.3 Image Klein 的导出数据（4.5 MB） |
 | `LICENSE-THIRD-PARTY.md` | 两个上游模型的许可证与声明 |
 
 ## 数据目录里有什么

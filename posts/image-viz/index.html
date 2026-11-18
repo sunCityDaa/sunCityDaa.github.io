@@ -417,7 +417,7 @@ t 与 target_t（本步要跳到哪）各自嵌入后相加 → 逐 token 调制
 <p><strong>流映射蒸馏。</strong> 模型多一个 <code>target_timestep_embedder</code>，它同时知道&quot;现在在 t&quot;和&quot;要跳到哪&quot;。实测 16 步的时间表：</p>
 <pre tabindex="0"><code>1.000 → 0.992 → 0.980 → 0.969 → 0.953 → 0.938 → 0.922 → 0.898
       → 0.875 → 0.844 → 0.805 → 0.758 → 0.699 → 0.617 → 0.498 → 0.316 → 0
-</code></pre><p>最后一步从 0.316 <strong>直接跳到 0</strong>。对比 Qwen 的 40 步余弦式表（1.0 → 0.988 → … → 0.068 → 0.020），能看出来这不是&quot;少跑了几步&quot;，而是完全不同的采样范式。</p>
+</code></pre><p>最后一步从 0.316 <strong>直接跳到 0</strong>。对比 Qwen 的 40 步平滑下降表（1.0 → 0.988 → … → 0.068 → 0.020），能看出来这不是&quot;少跑了几步&quot;，而是完全不同的采样范式。</p>
 <p><strong>文本编码用 8 层中间隐状态堆叠</strong>（20480 维），而不是像 Qwen 那样只用最后一层（4096 维）。5 倍宽的输入，这也是后面 FLUX 文本流 RMS 高得多的原因之一。</p>
 <p><strong>VAE 只有 84M</strong>，32 通道潜变量，8× 下采样后再 2×2 打包成 128 通道——所以 <code>x_embedders.image</code> 吃的是 128 维。</p>
 <hr>
@@ -565,7 +565,7 @@ t 与 target_t（本步要跳到哪）各自嵌入后相加 → 逐 token 调制
       </tr>
   </tbody>
 </table>
-<p>导出后 Qwen 8.5 MB、FLUX 4.7 MB。全部是可公开的统计量与生成结果，<strong>不含任何权重</strong>。</p>
+<p>导出后 Qwen 8.2 MB、FLUX 4.5 MB。全部是可公开的统计量与生成结果，<strong>不含任何权重</strong>。</p>
 <p><code>act_XX.png</code> 是个 8 列 × N 行的图集（R8 灰度），tile 顺序是 <code>[&quot;x_t&quot;, …所有 block…, &quot;v&quot;]</code>——Qwen 34 个、FLUX 35 个。用一张 PNG 装下所有层，既省请求也让 GPU 端可以一次上传成纹理。</p>
 <hr>
 <h2 id="7-怎么导出探针钩子与注意力复算">7. 怎么导出：探针、钩子与注意力复算</h2>
@@ -691,7 +691,7 @@ dist   = pad · max(across/2/th, along/2/tv) + max(sx, sz)·0.08
 <hr>
 <h2 id="10-渲染实现webgl2-实例化">10. 渲染实现：WebGL2 实例化</h2>
 <p>整个渲染器 232 行，没有依赖。</p>
-<p><strong>每个格子一个立方体实例</strong>，一共约 1.2 万个。实例数据 12 个 float：</p>
+<p><strong>每个格子一个立方体实例</strong>：Qwen 14.6 万个、FLUX 15.0 万个（39 / 46 个组）。实例数据 12 个 float：</p>
 <pre tabindex="0"><code>x, y, z, s   |   src, u, v, palette   |   groupId, hmax, h0, staticColor
 </code></pre><p><strong>顶点着色器从三张纹理取值</strong>：</p>
 <table>
@@ -722,7 +722,7 @@ dist   = pad · max(across/2/th, along/2/tv) + max(sx, sz)·0.08
 </table>
 <p>状态纹理是 llm-viz 那套&quot;逐组变暗 / 逐格揭示&quot;动画的复用：讲某一章时，非重点组把 <code>r</code> 调到 0.45 并<strong>压平高度</strong>（<code>hmax</code> 乘 0.25），被讲的组保持满高。这不是特异功能，只是每帧上传一张 64×64 的浮点纹理。</p>
 <p>立方体 6 个面、36 个顶点，逆时针绕序 <code>[0,2,1,0,3,2]</code>，开 <code>CULL_FACE</code>。第一版我把绕序写反了，结果所有方块看起来都是空心的——你看到的是内壁。</p>
-<p>悬停拾取不用射线求交库，而是<strong>沿射线步进</strong>：以格子高度为单位往前走，每一步把世界坐标换成格子索引，再看该处高度是否超过射线当前高度。对 1.2 万个立方体来说，这比逐实例求交快得多。</p>
+<p>悬停拾取不用射线求交库，而是<strong>沿射线步进</strong>：以格子高度为单位往前走，每一步把世界坐标换成格子索引，再看该处高度是否超过射线当前高度。对 15 万个立方体来说，这比逐实例求交快得多。</p>
 <hr>
 <h2 id="11-看到了什么">11. 看到了什么</h2>
 <p>把所有数据摆在一起之后，有几件事挺有意思。</p>
