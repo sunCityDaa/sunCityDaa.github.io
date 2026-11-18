@@ -21,6 +21,7 @@ export const STATIC_COLORS = [
   [0.85, 0.72, 0.90], // 5 调制/时间
   [0.95, 0.80, 0.45], // 6 VAE
   [0.70, 0.70, 0.74], // 7 未使用（image_cond）
+  [0.40, 0.73, 0.70], // 8 输入/输出投影（io）
 ];
 
 const SPECIAL = /^<\|.*\|>$|^\\n$|^(user|assistant|system)$/;
@@ -134,13 +135,16 @@ export function buildScene(meta) {
     // 权重板：网格左侧一列扁平板，面积 ∝ 矩阵元素数（蓝 = 注意力 q/k/v/o，绿 = MLP）
     const p = b.params;
     g.params = p;
-    const mats = isQwen ? [1, 1, 1, 1, 3, 3, 3] : [1, 1, 1, 1, 6, 3];
+    const wmats = meta.arch ? meta.arch.block.modules.filter((m) => m.kind === 'w') : null;
+    const base = wmats ? Math.min(...wmats.map((m) => m.params)) : 1;
+    const mats = wmats ? wmats.map((m) => m.params / base) : (isQwen ? [1, 1, 1, 1, 3, 3, 3] : [1, 1, 1, 1, 6, 3]);
+    const matCol = wmats ? wmats.map((m) => (m.group === 'mlp' ? 4 : 3)) : null;
     let zz = z0 + 18;
     mats.forEach((a, m) => {
       const depth = 4.2 * a;
       // 一块板 = 7 × depth，用 7×7 的方块沿 z 拼出（最后一块按剩余深度截短不了，就让它略重叠）
       for (let k = 0; k < depth - 0.01; k += 7) {
-        push(g, sx + 6, 0, zz + Math.min(k, Math.max(0, depth - 7)), Math.min(7, depth), SRC.STATIC, 0, 0, PAL.GREY, 0.8, 0.05, m >= 4 ? 4 : 3);
+        push(g, sx + 6, 0, zz + Math.min(k, Math.max(0, depth - 7)), Math.min(7, depth), SRC.STATIC, 0, 0, PAL.GREY, 0.8, 0.05, matCol ? matCol[m] : (m >= 4 ? 4 : 3));
       }
       zz += depth + 1.2;
     });
@@ -163,9 +167,57 @@ export function buildScene(meta) {
   for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) push(gVae, outX + G + 14 + i * 3, 0, outZ + 18 + j * 3, 2.6, SRC.STATIC, 0, 0, PAL.GREY, 4 + ((i + j) % 3), 0.1, 6);
   const imgPlane = { x: outX + G + 50, z: outZ + G / 2, size: G + 8 };
 
-  // 全局包围盒
+  // ---------------- 6. 架构视图：把 block 拆成权重矩阵
+  // 每个矩阵画成一块平板，长宽比 = 列数 : 行数，所以**面积 ∝ 元素数**；
+  // 平板由 2×2 的小方块铺成（一个立方体实例是正方形的，画不出长方形）。
+  const fmtP = (n) => (n >= 1e9 ? (n / 1e9).toFixed(2) + 'B' : (n / 1e6).toFixed(1) + 'M');
+  const mkArch = (mods, x0, z0, title, sub, groupRows) => {
+    if (!mods || !mods.length) return null;
+    const RANK = { mod: 0, io: 1, norm: 2 };
+    const mats = mods.filter((m) => m.kind === 'w' && m.shape.length === 2)
+      .slice().sort((x, y) => (RANK[x.group] ?? 1) - (RANK[y.group] ?? 1));
+    if (!mats.length) return null;
+    const maxDim = Math.max(...mats.map((m) => Math.max(m.shape[0], m.shape[1])));
+    const SZ = 60 / maxDim;     // 最长边 = 60 个单位
+    const s = 2;                // 小方块边长
+    const g = addGroup({ name: title, kind: 'arch', title, sub, stage: 'arch' });
+    g.subLabels = [];
+    g.plates = [];
+    const GAP = 10, MAXW = 150;
+    let cx = 0, cz = 0, rowD = 0, lastGroup = null, k = 0;
+    for (const m of mats) {
+      const [rows, cols] = m.shape;
+      const w = Math.max(s, cols * SZ), d = Math.max(s, rows * SZ);
+      if (cx > 0 && (cx + w > MAXW || (groupRows && m.group !== lastGroup))) { cx = 0; cz += rowD + GAP; rowD = 0; }
+      lastGroup = m.group;
+      const sc = { attn: 3, mlp: 4, mod: 5, io: 8 }[m.group] ?? 0;
+      const nx = Math.max(1, Math.round(w / s)), nz = Math.max(1, Math.round(d / s));
+      for (let i = 0; i < nx; i++) {
+        for (let j = 0; j < nz; j++) {
+          push(g, x0 + cx + i * s, 0, z0 + cz + j * s, s * 0.92, SRC.STATIC, 0, 0, PAL.GREY, 1.6, 0.15, sc);
+        }
+      }
+      const labZ = z0 + cz + d / 2 + ((k++ % 2) ? 6 : -6);
+      g.subLabels.push({ text: m.short || m.name, sub: `${rows}×${cols} · ${fmtP(m.params)}`, pos: [x0 + cx + w / 2, 0, labZ] });
+      g.plates.push({ x: x0 + cx, z: z0 + cz, w, d, m });
+      cx += w + GAP;
+      rowD = Math.max(rowD, d);
+    }
+    g.archW = cx; g.archD = cz + rowD;
+    return g;
+  };
+  const arch = meta.arch || null;
+  const archX = -PITCH_X + 18;
+  const archZ = nRows * PITCH_Z + Z_OFF + 120;
+  const gArchBlock = arch ? mkArch(arch.block.modules, archX, archZ,
+    `一个 block 的权重 · ${fmtP(arch.block.params)}`, '面积 ∝ 元素数', true) : null;
+  const gArchIO = arch ? mkArch(arch.io, archX, archZ + 220,
+    '模型级模块（嵌入 / 投影 / 调制）', '面积 ∝ 元素数', true) : null;
+
+  // 全局包围盒（架构区在远处，不计入，否则总览会被拉得很远）
   const all = { minX: Infinity, minY: 0, minZ: Infinity, maxX: -Infinity, maxY: 1, maxZ: -Infinity };
   for (const g of groups) {
+    if (g.kind === 'arch') continue;
     all.minX = Math.min(all.minX, g.bbox.minX); all.maxX = Math.max(all.maxX, g.bbox.maxX);
     all.minZ = Math.min(all.minZ, g.bbox.minZ); all.maxZ = Math.max(all.maxZ, g.bbox.maxZ);
     all.maxY = Math.max(all.maxY, g.bbox.maxY);
@@ -176,6 +228,7 @@ export function buildScene(meta) {
   return {
     data: new Float32Array(inst), count: inst.length / 12, groups, labels, bbox: all,
     scalarRows, SW, blockGroups, gTok, gTE, gTxtIn, gTime, gIn, gOut, gVae, imgPlane, nRows, Z_OFF,
+    gArchBlock, gArchIO,
   };
 }
 

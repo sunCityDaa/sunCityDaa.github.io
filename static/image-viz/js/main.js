@@ -233,7 +233,8 @@ function resetView(instant = false) {
   const aspect = c.clientWidth / Math.max(1, c.clientHeight);
   const box = cam ? unionBox(cam) : app.scene.bbox;
   const pitch = ch.pitch ?? (cam ? 0.95 : 0.9);
-  const v = app.camera.frame(box, { yaw: cam ? -0.2 : -0.12, pitch, pad: cam ? 1.1 : 1.0, aspect });
+  const yaw = ch.yaw ?? (cam ? -0.2 : -0.12);
+  const v = app.camera.frame(box, { yaw, pitch, pad: ch.pad ?? (cam ? 1.1 : 1.0), aspect });
   if (instant) Object.assign(app.camera, { target: v.target, yaw: v.yaw, pitch: v.pitch, dist: v.dist, anim: null });
   else app.camera.flyTo(v);
   app.dirty = true;
@@ -263,10 +264,19 @@ function buildLabels() {
       add(g, g.title, 'blk', [b.minX, 0, b.minZ - 1]);
     } else if (g.kind === 'unused') {
       add(g, g.title, 'stage dim2', [b.minX, 0, b.minZ - 1]);
+    } else if (g.kind === 'arch') {
+      add(g, g.title, 'stage', [(b.minX + b.maxX) / 2, 0, b.minZ - 14]);
     } else if (g.kind === 'prompt') {
       add(g, g.title, 'stage blk', [b.maxX + 2, 0, b.maxZ]);
     } else {
       add(g, g.title, 'stage', [b.minX, 0, b.minZ - 1.5]);
+    }
+  }
+  // 架构区：每个矩阵一块标签（名字 + 形状/参数量/作用）
+  for (const g of s.groups) {
+    if (!g.subLabels) continue;
+    for (const t of g.subLabels) {
+      add(g, `${t.text}<span class="sub">${t.sub}</span>`, 'plate', t.pos);
     }
   }
   add(null, '最终图像（当前步 x₀ 的 VAE 解码）', 'stage', [s.imgPlane.x, s.imgPlane.size + 2, s.imgPlane.z]);
@@ -283,7 +293,8 @@ function placeLabels(vp, w, h) {
   const far = app.camera.dist > 1100;
   for (const l of app.labels) {
     const p = project(vp, l.pos, w, h);
-    const hide = !p || p[0] < -200 || p[0] > w + 50 || p[1] < -20 || p[1] > h + 20 || (far && l.cls.split(' ').includes('blk'));
+    const cls = l.cls.split(' ');
+    const hide = !p || p[0] < -200 || p[0] > w + 50 || p[1] < -20 || p[1] > h + 20 || (far && (cls.includes('blk') || cls.includes('plate')));
     l.el.style.display = hide ? 'none' : '';
     if (!hide) l.el.style.transform = `translate(${p[0].toFixed(1)}px, ${p[1].toFixed(1)}px) translate(0, -100%)`;
   }
@@ -451,6 +462,15 @@ function pickInGroup(g, ray, [t0, t1]) {
   const stepLen = 0.35;
   for (let t = t0; t <= t1; t += stepLen) {
     const p = [ray.o[0] + ray.d[0] * t, ray.o[1] + ray.d[1] * t, ray.o[2] + ray.d[2] * t];
+    if (g.plates) {
+      for (const pl of g.plates) {
+        if (p[0] >= pl.x && p[0] <= pl.x + pl.w && p[2] >= pl.z && p[2] <= pl.z + pl.d && p[1] <= 1.8) {
+          const mm = pl.m;
+          return { t, html: `<b>${mm.name}</b><br>${mm.shape.join(' × ')} = <span class="v">${(mm.params / 1e6).toFixed(1)}M</span> 参数<br>${mm.desc || ''}` };
+        }
+      }
+      return null;
+    }
     if (g.grid) {
       const c = Math.floor(p[0] - g.grid.x0), r = Math.floor(p[2] - g.grid.z0);
       if (c >= 0 && r >= 0 && c < g.grid.G && r < g.grid.G) {

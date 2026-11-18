@@ -115,14 +115,56 @@ export const CHAPTERS = [
         <li>MLP：SwiGLU，gate/proj 4096→12288，out 12288→4096；</li>
         <li>两处残差都乘 <code>tanh(gate)</code>，输入先 LayerNorm 再乘 <code>(1 + scale)</code>。</li></ul>
         <p><b>注意力掩码是「块因果」</b>：<code>(q ≥ k) 或 同一张图</code>。文本 token 只能看前面的文本，图像 token 能看全部文本和整张图。</p>
-        <p>每个 block 在场景里画成：中间 64×64 的柱阵 = 输出中每个图像 token 的 RMS；前面一排 = ${m.tokens.length} 个文本 token；后面一排 ${m.heads} 根粉柱 = 每个头把多少注意力分给了文本；左边的扁板代表 7 个权重矩阵（蓝 = 注意力，绿 = MLP）。</p>`;
+        <p>每个 block 在场景里画成：中间 64×64 的柱阵 = 输出中每个图像 token 的 RMS；前面一排 = ${m.tokens.length} 个文本 token；后面一排 ${m.heads} 根粉柱 = 每个头把多少注意力分给了文本；左边的扁板代表 7 个权重矩阵（蓝 = 注意力，绿 = MLP）。</p>
+        <p class="hint">这些扁板只是「有这么多权重」的记号。下一章把它们按真实形状铺开：一个矩阵一块平板，面积 = 参数量。</p>`;
       }
       const nI = m.blocks.filter((x) => x.kind === 'img').length;
       return `<p>FLUX.3 Klein 是<b>先分流、后合流</b>：</p>
       <ol><li><b>分流 ${nI} 层</b>：文本、图像、参考图各有自己的 ${nI} 个 block，只在<i>自己内部</i>做自注意力。最上面一行是文本分流（每块一排 80 个 token），下面开头 ${nI} 块是图像分流。参考图分流在文生图时不执行（灰板）。</li>
       <li><b>合流 ${nJ} 层</b>：把 80 个文本 token 和 4096 个图像 token 拼成 4176 长的序列做联合注意力，文本和图像各用自己的调制。</li></ol>
       <p>每个 block ${fmtB(b.params)} 参数，结构是<b>并行块</b>：同一个调制后的输入同时送进注意力和 FFN，两者相加后乘 gate 加回残差。注意力 24 头 × 128 维、QK-Norm、四轴 RoPE（t/h/w/l 各 32 维）；FFN 是 SwiGLU，<code>linear_in</code> 一次输出 2×9216。</p>
-      <p>合流块后面一排 ${m.heads} 根粉柱 = 每个头把多少注意力分给了文本。</p>`;
+      <p>合流块后面一排 ${m.heads} 根粉柱 = 每个头把多少注意力分给了文本。</p>
+      <p class="hint">左边那列扁板是权重记号；下一章会把一个 block 的每个矩阵按真实行列比铺开。</p>`;
+    },
+  },
+  {
+    id: 'arch', title: '权重矩阵',
+    focus: (s) => [s.gArchBlock], cam: (s) => [s.gArchBlock], pitch: 1.42, yaw: 0, pad: 1.3,
+    html: (m) => {
+      const a = m.arch;
+      if (!a) return '<p>正在加载架构数据……</p>';
+      const mats = a.block.modules.filter((x) => x.kind === 'w');
+      const sum = mats.reduce((t, x) => t + x.params, 0);
+      const mlp = mats.filter((x) => x.group === 'mlp').reduce((t, x) => t + x.params, 0);
+      const vecs = a.block.modules.filter((x) => x.kind !== 'w');
+      const rows = (list) => list.filter((x) => x.kind === 'w').map((x) =>
+        `<tr><td><code>${x.name}</code></td><td class="num">${x.shape.join(' × ')}</td><td class="num">${fmtB(x.params)}</td><td>${x.desc}</td></tr>`).join('');
+      return `<p>前面几章看的都是<b>数据</b>——激活和注意力。这一章看<b>模型本身</b>：${a.block.class} 里到底有哪些矩阵、各是什么形状。</p>
+      <p>场景下方每一块平板就是一个权重矩阵：长边对应较大的那一维，短边对应较小的一维，所以<b>平板的面积 ∝ 行 × 列</b>，也就是参数量。颜色：<span class="sw" style="background:#8ca6e6"></span>注意力 q/k/v/o，<span class="sw" style="background:#9ecc9e"></span>MLP，<span class="sw" style="background:#d9b7e6"></span>调制，<span class="sw" style="background:#66bab2"></span>输入/输出投影。</p>
+      <p>实测这一层共 <b>${mats.length} 个矩阵 + ${vecs.length} 个归一化向量</b>，合计 ${fmtB(a.block.params)} 参数：</p>
+      <div class="tablewrap"><table class="cmp arch"><tr><th>模块</th><th>形状</th><th>参数</th><th>作用</th></tr>${rows(a.block.modules)}</table></div>
+      <p>${isQ(m)
+        ? `注意力是 <b>4 个互相独立的 4096×4096</b>（q、k、v、输出各一个，不是融合 qkv），每个 ${fmtB(4096 * 4096)}；MLP 是 SwiGLU 的三个 ${'12288×4096'} 矩阵，每个 ${fmtB(12288 * 4096)}。MLP 恰好是注意力的 3 倍宽（<code>mlp_ratio=3</code>），所以三块绿板的面积是四块蓝板的 3 倍。`
+        : `注意力是 <b>4 个互相独立的 3072×3072</b>；FFN 的 <code>linear_in</code> 一次算出 2×9216（gate 与 up 拼在一起），所以是 ${'18432×3072'}，是注意力的 6 倍面积；<code>linear_out</code> 是 ${'9216×3072'}。`}</p>
+      <p>算一下：MLP 占这一层的 <b>${(mlp / sum * 100).toFixed(0)}%</b>（${fmtB(mlp)} / ${fmtB(sum)}）。所以这类模型里，参数大头既不是注意力、更不是嵌入，而是 FFN。</p>
+      <p class="hint">下一章是同一张图里的<b>模型级模块</b>：嵌入、投影、调制、输出。从正上方看时，平板面积就是参数量的直接比较。</p>`;
+    },
+  },
+  {
+    id: 'io', title: '模型级模块',
+    focus: (s) => [s.gArchIO], cam: (s) => [s.gArchIO], pitch: 1.42, yaw: 0, pad: 1.3,
+    html: (m) => {
+      const a = m.arch;
+      if (!a) return '<p>正在加载架构数据……</p>';
+      const rows = (list) => list.filter((x) => x.kind === 'w').map((x) =>
+        `<tr><td><code>${x.name}</code></td><td class="num">${x.shape.join(' × ')}</td><td class="num">${fmtB(x.params)}</td><td>${x.desc}</td></tr>`).join('');
+      const sum = a.io.filter((x) => x.kind === 'w').reduce((t, x) => t + x.params, 0);
+      return `<p>block 之外，模型还有这些矩阵：把潜变量和文本投进 hidden，把时间步变成调制向量，最后把 hidden 投回速度。合计 ${fmtB(sum)}。</p>
+      <div class="tablewrap"><table class="cmp arch"><tr><th>模块</th><th>形状</th><th>参数</th><th>作用</th></tr>${rows(a.io)}</table></div>
+      <p>${isQ(m)
+        ? `Qwen 的调制只有一个 <code>modulation.1</code>（4096 → 16384，${fmtB(67108864)}），<b>32 个 block 共用</b>——这是它比同规模 DiT 省下约 2B 参数的原因。block 自己没有调制参数。`
+        : `FLUX 的调制在模型级分 <b>6 组</b>（分流/合流 × 图像/参考图/文本），每组 3072 → 9216，<b>逐 token</b> 生效；合流那 3 组是每个 token 一份 scale/shift/gate。`}</p>
+      <p class="hint">注意分流块和合流块里都<b>没有</b>调制参数——它们从模型级拿。这也是为什么 block 的 122.7M 里只有 4 个注意力和 2 个 FFN 矩阵。</p>`;
     },
   },
   {
