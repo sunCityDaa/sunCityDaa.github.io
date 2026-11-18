@@ -211,8 +211,128 @@ export function buildScene(meta) {
   const archZ = nRows * PITCH_Z + Z_OFF + 120;
   const gArchBlock = arch ? mkArch(arch.block.modules, archX, archZ,
     `一个 block 的权重 · ${fmtP(arch.block.params)}`, '面积 ∝ 元素数', true) : null;
-  const gArchIO = arch ? mkArch(arch.io, archX, archZ + 220,
+  const gArchIO = arch ? mkArch(arch.io, archX + 900, archZ,
     '模型级模块（嵌入 / 投影 / 调制）', '面积 ∝ 元素数', true) : null;
+
+  // ---------------- 7. 整体架构：一条连通的流水线
+  // 参考 llm-viz 的做法：整条管线从左到右，一个 block 展开成注意力 / MLP 两条支路，
+  // 其余 block 折叠成一叠「×N」。所有平板共用同一个比例尺，所以大小可以互相比较。
+  const buildFlow = (m, A) => {
+    const g = addGroup({ name: 'arch_flow', kind: 'arch', title: '整体架构 · 每一次去噪都走一遍这条管线', stage: 'arch' });
+    g.subLabels = []; g.plates = [];
+    const mats = A.block.modules.filter((x) => x.kind === 'w' && x.shape.length === 2);
+    const ioMats = A.io.filter((x) => x.kind === 'w' && x.shape.length === 2);
+    const maxDim = Math.max(...[...mats, ...ioMats].map((x) => Math.max(x.shape[0], x.shape[1])));
+    const SZ = 60 / maxDim;               // 最长边 = 60 个单位
+    const s = 2, X0 = archX + 1800, Z0 = archZ;
+    const W = (x) => Math.max(s, x.shape[1] * SZ), D = (x) => Math.max(s, x.shape[0] * SZ);
+    let cx = 0;
+
+    // 一块平板；dz 为标签相对平板前沿的偏移（负 = 在前方，正 = 在后方）
+    const slab = (x, z, w, d, col, mod, label, dz) => {
+      const nx = Math.max(1, Math.round(w / s)), nz = Math.max(1, Math.round(d / s));
+      for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++)
+        push(g, X0 + x + i * s, 0, Z0 + z + j * s, s * 0.92, SRC.STATIC, 0, 0, PAL.GREY, 1.8, 0.2, col);
+      if (mod) g.plates.push({ x: X0 + x, z: Z0 + z, w, d, m: mod });
+      if (label) g.subLabels.push({ text: label, sub: '', pos: [X0 + x + w / 2, 0, Z0 + z + (dz ?? -5)] });
+      return w;
+    };
+    const arrow = (x, z, len, vertical) => {
+      for (let k = 0; k < len; k += 2.4) {
+        if (vertical) push(g, X0 + x, 0, Z0 + z + k, 1.2, SRC.STATIC, 0, 0, PAL.GREY, 0.5, 0.1, 0);
+        else push(g, X0 + x + k, 0, Z0 + z, 1.2, SRC.STATIC, 0, 0, PAL.GREY, 0.5, 0.1, 0);
+      }
+    };
+    const io = (name) => ioMats.find((x) => x.name === name) || ioMats.find((x) => x.name.includes(name));
+    const NICE = { 'img_mlp.gate_layer': 'gate', 'img_mlp.proj': 'proj', 'img_mlp.out': 'out', 'ff.linear_in': 'gate+up', 'ff.linear_out': 'out' };
+    const nice = (n) => NICE[n] || n.split('.').pop();
+
+    // ① 文本 token
+    slab(cx, 12, 26, 3, 1, null, `提示词 (${m.tokens.length})`, -5);
+    arrow(cx + 28, 13, 12);
+    cx += 52;
+
+    // ② 文本编码器（36 层折叠成一叠）
+    const te = m.components.text_encoder;
+    for (let i = 0; i < 6; i++) slab(cx, 2 + i * 4.2, 34, 3, 5, null, '', 0);
+    g.subLabels.push({ text: `文本编码器 ×${te.layers}`, sub: '', pos: [X0 + cx + 17, 0, Z0 - 22] });
+    g.subLabels.push({ text: '', sub: '', pos: [X0 + cx + 17, 0, Z0 + 30] });
+    g.plates.push({ x: X0 + cx, z: Z0 + 2, w: 34, d: 26, m: { name: `文本编码器 ${te.class}`, short: `文本编码器 · ${te.layers} 层`, shape: [te.layers, te.hidden], params: te.params, desc: `只算一次；${isQwen ? '取最后一层' : '取第 4…32 层堆叠'}` } });
+    arrow(cx + 36, 13, 12);
+    cx += 62;
+
+    // ③ 文本投影
+    const tin = io(isQwen ? 'txt_in' : 'context_embedder');
+    if (tin) {
+      const w = Math.max(10, W(tin) * 0.5), d = Math.max(8, D(tin) * 0.5);
+      slab(cx, 13 - d / 2, w, d, 8, tin, isQwen ? 'txt_in' : '文本投影', -12);
+      arrow(cx + w + 2, 13, 10);
+      cx += w + 34;
+    }
+
+    // ④ 一个 block 展开
+    const M = (re) => mats.find((x) => re.test(x.name));
+    const q = M(/to_q/), k = M(/to_k/), v = M(/to_v/), o = M(/to_out/);
+    const MRANK = { 'img_mlp.gate_layer': 0, 'img_mlp.proj': 1, 'img_mlp.out': 2, 'ff.linear_in': 0, 'ff.linear_out': 1 };
+    const mlpMats = mats.filter((x) => x.group === 'mlp').sort((x, y) => (MRANK[x.name] ?? 0) - (MRANK[y.name] ?? 0));
+    const B0 = cx;
+    let bx = B0 + 10;
+    const P = 12;
+    slab(bx, 3, 7, 20, 0, null, 'LN', -5); bx += 7 + 6;
+    arrow(bx, 13, 6); bx += 10;
+    [q, k, v].forEach((mm, i) => {
+      slab(bx, 3, W(mm), D(mm), 3, mm, ['q', 'k', 'v'][i], -5);
+      bx += W(mm) + P;
+    });
+    arrow(bx, 13, 10); bx += 18;
+    slab(bx, 3, 12, 20, 5, null, 'softmax', -5); bx += 12 + 8;
+    arrow(bx, 13, 10); bx += 20;
+    slab(bx, 3, W(o), D(o), 3, o, 'o', -5); bx += W(o) + P;
+    slab(bx, 3, 8, 20, 0, null, '+', -5);
+    const resX = bx;
+    // MLP 支路
+    let mx = B0 + 10;
+    const mz = 76;
+    slab(mx, mz + 3, 7, 20, 0, null, 'LN', -5); mx += 7 + 6;
+    arrow(mx, mz + 13, 6); mx += 10;
+    mlpMats.forEach((mm) => {
+      // 竖长的矩阵（gate/up）标签放到下方，免得和右边扁平的那块打架
+      slab(mx, mz + 3, W(mm), D(mm), 4, mm, nice(mm.name), D(mm) > W(mm) ? D(mm) + 8 : -5);
+      mx += W(mm) + P;
+    });
+    slab(mx, mz + 3, 8, 20, 0, null, '+', -5);
+    // 分叉与汇合
+    arrow(B0 + 2, 0, mz + 30, true);
+    arrow(resX + 2, 26, mz - 20, true);
+    g.subLabels.push({ text: '一个 block（展开）', sub: `${A.block.class} · ${fmtP(A.block.params)}`, pos: [X0 + B0 + 60, 0, Z0 - 16] });
+
+    cx = Math.max(resX + 10, mx + 10) + 34;
+
+    // ⑤ 其余 block 折叠
+    arrow(cx - 12, 13, 10);
+    const nRest = m.blocks.filter((b) => b.kind === 'joint').length - 1;
+    for (let i = 0; i < 7; i++) slab(cx, 2 + i * 3.4, 30, 2.6, 3, null, '', 0);
+    g.subLabels.push({ text: `×${nRest} block`, sub: '', pos: [X0 + cx + 15, 0, Z0 - 6] });
+    g.plates.push({ x: X0 + cx, z: Z0 + 2, w: 30, d: 24, m: { name: `其余 ${nRest} 个 block`, short: '', shape: [nRest, A.block.params], params: nRest * A.block.params, desc: '结构完全相同，这里折叠；参数是这些 block 的总和' } });
+    arrow(cx + 32, 13, 10);
+    cx += 56;
+
+    // ⑥ 输出侧
+    const nout = io('norm_out'), pout = io('proj_out');
+    if (nout) {
+      const w = Math.max(10, W(nout) * 0.5), d = Math.max(8, D(nout) * 0.5);
+      slab(cx, 13 - d / 2, w, d, 5, nout, 'norm_out', -5); arrow(cx + w + 2, 13, 8); cx += w + 42;
+    }
+    if (pout) {
+      const w = Math.max(10, W(pout) * 0.6), d = Math.max(8, D(pout) * 0.6);
+      slab(cx, 13 - d / 2, w, d, 8, pout, 'proj_out', -5); arrow(cx + w + 2, 13, 8); cx += w + 42;
+    }
+    slab(cx, 3, 18, 18, 3, null, '速度 v', -5); arrow(cx + 20, 13, 8); cx += 38;
+    slab(cx, 1, 16, 24, 6, null, 'VAE 解码器', -18); arrow(cx + 18, 13, 8); cx += 34;
+    slab(cx, 0, 30, 30, 6, null, '图像', -5);
+    return g;
+  };
+  const gFlow = arch ? buildFlow(meta, arch) : null;
 
   // 全局包围盒（架构区在远处，不计入，否则总览会被拉得很远）
   const all = { minX: Infinity, minY: 0, minZ: Infinity, maxX: -Infinity, maxY: 1, maxZ: -Infinity };
@@ -228,7 +348,7 @@ export function buildScene(meta) {
   return {
     data: new Float32Array(inst), count: inst.length / 12, groups, labels, bbox: all,
     scalarRows, SW, blockGroups, gTok, gTE, gTxtIn, gTime, gIn, gOut, gVae, imgPlane, nRows, Z_OFF,
-    gArchBlock, gArchIO,
+    gArchBlock, gArchIO, gFlow,
   };
 }
 
