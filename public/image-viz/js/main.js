@@ -265,7 +265,7 @@ function buildLabels() {
     } else if (g.kind === 'unused') {
       add(g, g.title, 'stage dim2', [b.minX, 0, b.minZ - 1]);
     } else if (g.kind === 'arch') {
-      add(g, g.title, 'stage', [(b.minX + b.maxX) / 2, 0, b.minZ - 14]);
+      add(g, g.title, 'stage', [g.name === 'arch_flow' ? b.minX + 60 : (b.minX + b.maxX) / 2, 0, b.minZ - (g.name === 'arch_flow' ? 50 : 14)]);
     } else if (g.kind === 'prompt') {
       add(g, g.title, 'stage blk', [b.maxX + 2, 0, b.maxZ]);
     } else {
@@ -286,12 +286,18 @@ function updateLabelDim() {
   const ch = CHAPTERS[app.chapter];
   const focus = ch.focus(app.scene);
   const ids = focus ? new Set(focus.map((g) => g.id)) : null;
-  for (const l of app.labels) l.el.classList.toggle('dim', !!(ids && l.g && !ids.has(l.g.id)));
+  const hideOthers = !!ch.only;
+  for (const l of app.labels) {
+    const mine = !!(ids && l.g && ids.has(l.g.id));
+    l.el.classList.toggle('dim', !!(ids && l.g && !mine));
+    l.hidden = hideOthers && !mine && !!l.g;
+  }
 }
 
 function placeLabels(vp, w, h) {
   const far = app.camera.dist > 1100;
   for (const l of app.labels) {
+    if (l.hidden) { l.el.style.display = 'none'; continue; }
     const p = project(vp, l.pos, w, h);
     const cls = l.cls.split(' ');
     const hide = !p || p[0] < -200 || p[0] > w + 50 || p[1] < -20 || p[1] > h + 20 || (far && (cls.includes('blk') || cls.includes('plate')));

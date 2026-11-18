@@ -128,8 +128,29 @@ export const CHAPTERS = [
     },
   },
   {
+    id: 'flow', title: '整体架构',
+    focus: (s) => [s.gFlow], cam: (s) => [s.gFlow], pitch: 1.42, yaw: 0, pad: 1.05, only: true,
+    html: (m) => {
+      const a = m.arch;
+      if (!a) return '<p>正在加载架构数据……</p>';
+      const mats = a.block.modules.filter((x) => x.kind === 'w');
+      const nJ = m.blocks.filter((b) => b.kind === 'joint').length;
+      const tin = m.io[isQ(m) ? 'txt_in' : 'context_embedder'];
+      return `<p>这一章是<b>整条管线</b>，从提示词到像素，一次去噪要走的部分全在这里。所有平板共用同一个比例尺，所以大小可以直接比。</p>
+      <ol>
+        <li><b>提示词 → 文本编码器</b>（${m.components.text_encoder.layers} 层，${fmtB(m.components.text_encoder.params)}）：折叠成一叠，因为 ${m.components.text_encoder.layers} 层的结构完全一样。</li>
+        <li><b>文本投影</b>：${isQ(m) ? '<code>txt_in</code>，4096 → 4096' : '<code>context_embedder</code>，20480 → 3072'}，${fmtB(tin.params)}。只算一次。</li>
+        <li><b>一个 block 展开</b>（${fmtB(a.block.params)}，${mats.length} 个矩阵）：左边分叉成两条支路——上面是注意力（q / k / v → softmax → o），下面是 MLP（gate、up → down），各自加回残差。两条支路都是<b>同一份调制</b>出来的输入。</li>
+        <li><b>其余 ${nJ - 1} 个 block</b>：结构一模一样，所以折叠成一叠，不重复画。</li>
+        <li><b>输出</b>：<code>norm_out</code> → <code>proj_out</code> 得到速度 v，VAE 解码成像素。</li>
+      </ol>
+      <p>把这一整条（除了文本编码）走 ${m.steps_n} 遍，就是一次出图。文本编码只在第 1 步前做一次，之后每步复用。</p>
+      <p class="hint">下一章把一个 block 的矩阵按真实行列比铺开；再下一章是 block 之外的嵌入、投影和调制。悬停任意平板可以看全名、形状、参数量。</p>`;
+    },
+  },
+  {
     id: 'arch', title: '权重矩阵',
-    focus: (s) => [s.gArchBlock], cam: (s) => [s.gArchBlock], pitch: 1.42, yaw: 0, pad: 1.3,
+    focus: (s) => [s.gArchBlock], cam: (s) => [s.gArchBlock], pitch: 1.42, yaw: 0, pad: 1.3, only: true,
     html: (m) => {
       const a = m.arch;
       if (!a) return '<p>正在加载架构数据……</p>';
@@ -152,7 +173,7 @@ export const CHAPTERS = [
   },
   {
     id: 'io', title: '模型级模块',
-    focus: (s) => [s.gArchIO], cam: (s) => [s.gArchIO], pitch: 1.42, yaw: 0, pad: 1.3,
+    focus: (s) => [s.gArchIO], cam: (s) => [s.gArchIO], pitch: 1.42, yaw: 0, pad: 1.3, only: true,
     html: (m) => {
       const a = m.arch;
       if (!a) return '<p>正在加载架构数据……</p>';

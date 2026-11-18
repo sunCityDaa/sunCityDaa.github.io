@@ -274,7 +274,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          61 min read
+          63 min read
         </span>
 
         
@@ -296,7 +296,7 @@
 <p><img src="qwen-overview.png" alt="image-viz 总览：Qwen-Image-2.1 的一次出图"></p>
 <p>最终成品：</p>
 <ul>
-<li><strong>两个模型、13 章中文讲解</strong>：总览 → 提示词与 token → 文本编码器 → 噪声与潜变量 → 时间步与调制 → Transformer block → <strong>权重矩阵</strong> → <strong>模型级模块</strong> → 残差流里的图像 → 词到图像区域 → 一步步去噪 → VAE 解码 → 两个模型对比。</li>
+<li><strong>两个模型、14 章中文讲解</strong>：总览 → 提示词与 token → 文本编码器 → 噪声与潜变量 → 时间步与调制 → Transformer block → <strong>整体架构</strong> → <strong>权重矩阵</strong> → <strong>模型级模块</strong> → 残差流里的图像 → 词到图像区域 → 一步步去噪 → VAE 解码 → 两个模型对比。</li>
 <li><strong>每一步都是真的</strong>：Qwen 走 40 步、FLUX 走 16 步，每步抓取所有 32（或 33）个 block 的 64×64 图像 token 激活。拖动时间轴，格子会跟着变。</li>
 <li><strong>注意力是复算出来的</strong>：导出时用模型自己的 QK-Norm 与 RoPE 重算 softmax，把「每个图像位置对每个词的注意力」画成热图。<code>LLM</code>、<code>VIZ</code> 集中在狐狸举的木牌上，<code>fox</code> 勾出狐狸，<code>paws</code> 落在爪子上，<code>trees</code>、<code>background</code> 落在背景。</li>
 <li><strong>x₀ 是真解码的</strong>：每步的速度 v 按 <code>x0 ≈ x_t − t·v</code> 得到估计，<strong>真的送进 VAE 解码</strong>，和 pipeline 自己的输出逐像素比对，平均误差只有 0.30/255。</li>
@@ -692,7 +692,18 @@ dist   = pad · max(across/2/th, along/2/tv) + max(sx, sz)·0.08
 <hr>
 <h2 id="10-把模型本身画出来权重矩阵">10. 把模型本身画出来：权重矩阵</h2>
 <p>第一版上线后，得到一个很准确的意见：<strong>只看到了中间结果，看不到模型架构</strong>。</p>
-<p>这话说得对。格子板上的高低是这一层<strong>算出来的值</strong>，你没法从中知道这一层有几个矩阵、各是什么形状、哪个大哪个小。llm-viz 之所以能看懂 GPT，是因为它把每个权重矩阵都画成了一个盒子。所以补了两章：<strong>权重矩阵</strong> 和 <strong>模型级模块</strong>。</p>
+<p>这话说得对。格子板上的高低是这一层<strong>算出来的值</strong>，你没法从中知道这一层有几个矩阵、各是什么形状、哪个大哪个小。llm-viz 之所以能看懂 GPT，是因为它把每个权重矩阵都画成了一个盒子。所以补了三章：<strong>整体架构</strong>、<strong>权重矩阵</strong>、<strong>模型级模块</strong>。</p>
+<h3 id="先看整体一条连通的管线">先看整体：一条连通的管线</h3>
+<p>照 llm-viz 的思路，把整条管线从左到右铺开，一个 block 在中间<strong>展开</strong>成注意力和 MLP 两条支路，其余 block <strong>折叠</strong>：</p>
+<p><img src="qwen-flow.png" alt="Qwen-Image-2.1 的整体架构：提示词 → 文本编码器 → 文本投影 → 一个 block 展开 → ×31 block → norm_out → proj_out → 速度 v → VAE → 图像"></p>
+<p><img src="flux-flow.png" alt="FLUX.3 Klein 的整体架构：注意 gate+up 是一块 6 倍面积的矩阵，其余 27 个 block 折叠"></p>
+<p>几个设计上的取舍：</p>
+<ul>
+<li><strong>折叠</strong>。32（或 33）个 block 结构完全一样，画 32 遍只会得到一堵墙。所以只展开第一个，其余画成一叠「×31 block」——但那一叠的<strong>面积仍然是这些 block 参数量的总和</strong>，不是随手画的。</li>
+<li><strong>展开的那个 block 是真的</strong>。上面一条是注意力（LN → q → k → v → softmax → o），下面一条是 MLP（LN → gate → up → down → o），两条支路都从同一个输入分叉、各自加回残差。左边那条竖直的点线就是分叉和汇合。</li>
+<li><strong>同一个比例尺</strong>。所有平板共用 <code>SZ = 60 / 最长边</code>，所以 q/k/v/o 是四个一样大的方块，gate/up 是竖长条，down 是横长条——比例是可以直接看的。</li>
+<li><strong>文本编码器只画一叠</strong>。36 层结构一样，而且它只在第一步之前算一次。</li>
+</ul>
 <h3 id="数据从哪来">数据从哪来</h3>
 <p>不需要重新跑推理。<code>arch_probe.py</code> 在第一次探针时就把 <code>named_parameters()</code> 完整存了下来（Qwen 297 个张量、FLUX 359 个）。<code>export_arch.py</code> 从里面抽出两样东西：</p>
 <ul>
