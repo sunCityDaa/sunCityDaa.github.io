@@ -13,6 +13,7 @@ uniform mat4 u_vp;
 uniform sampler2D u_atlas;           // R8：当前步每层图像 token 的 RMS（已逐 tile 归一化）
 uniform sampler2D u_scalar;          // R32F：当前步的标量
 uniform sampler2D u_state;           // RGBA32F：每组 r=亮度 g=高亮 b=调色板覆盖(-1 不覆盖) a=高度缩放
+uniform sampler2D u_watlas;          // R8：权重的真实抽样值（128 = 0）
 uniform vec3 u_static[9];
 out vec3 v_col;
 out vec3 v_n;
@@ -24,6 +25,14 @@ vec3 ramp4(vec3 a, vec3 b, vec3 c, vec3 d, float t) {
 vec3 palAct(float t) { return ramp4(vec3(0.86, 0.90, 0.95), vec3(0.47, 0.75, 0.80), vec3(0.16, 0.47, 0.66), vec3(0.15, 0.13, 0.42), t); }
 vec3 palAttn(float t) { return ramp4(vec3(0.97, 0.90, 0.92), vec3(0.95, 0.56, 0.62), vec3(0.80, 0.18, 0.45), vec3(0.36, 0.05, 0.36), t); }
 vec3 palTxt(float t) { return ramp4(vec3(0.90, 0.90, 0.92), vec3(0.97, 0.78, 0.55), vec3(0.93, 0.48, 0.20), vec3(0.62, 0.20, 0.06), t); }
+// 权重：发散色表，0.5 是中灰，负值偏蓝、正值偏红。
+// 权重本身数值很小（std≈0.05），按 pow 0.45 提对比度，否则整块都是一片浅灰。
+vec3 palW(float t) {
+  float d = (t - 0.5) * 2.0;
+  d = sign(d) * pow(abs(d), 0.35);
+  return d < 0.0 ? mix(vec3(0.86, 0.89, 0.93), vec3(0.13, 0.27, 0.60), -d)
+                 : mix(vec3(0.86, 0.89, 0.93), vec3(0.66, 0.13, 0.14), d);
+}
 
 void main() {
   int g = int(a_extra.x + 0.5);
@@ -32,15 +41,17 @@ void main() {
   int kind = int(a_src.x + 0.5);
   if (kind == 1) val = texelFetch(u_atlas, ivec2(int(a_src.y), int(a_src.z)), 0).r;
   else if (kind == 2) val = clamp(texelFetch(u_scalar, ivec2(int(a_src.y), int(a_src.z)), 0).r, 0.0, 1.0);
+  else if (kind == 3) val = texelFetch(u_watlas, ivec2(int(a_src.y), int(a_src.z)), 0).r;
   int pal = st.b >= 0.0 ? int(st.b + 0.5) : int(a_src.w + 0.5);
   vec3 col;
-  if (kind == 0) col = u_static[int(a_extra.w + 0.5)];
+  if (kind == 3) col = palW(val);
+  else if (kind == 0) col = u_static[int(a_extra.w + 0.5)];
   else if (pal == 1) col = palAttn(val);
   else if (pal == 2) col = palTxt(val);
   else col = palAct(val);
   col = mix(vec3(0.94, 0.95, 0.97), col, st.r);
   col = mix(col, min(col * 1.15 + 0.06, 1.0), st.g);
-  float hv = kind == 0 ? 1.0 : (kind == 1 ? pow(val, pal == 1 ? 0.8 : 1.4) : val);
+  float hv = (kind == 0 || kind == 3) ? 1.0 : (kind == 1 ? pow(val, pal == 1 ? 0.8 : 1.4) : val);
   float h = a_extra.z + a_extra.y * hv * st.a * (st.r < 0.5 ? 0.25 : 1.0);
   vec3 p = vec3(a_pos.x, a_pos.y, a_pos.z) + a_vert * vec3(a_pos.w, max(h, 0.02), a_pos.w);
   gl_Position = u_vp * vec4(p, 1.0);
@@ -104,13 +115,13 @@ export class Renderer {
     this.prog = compile(gl, VS, FS);
     this.qprog = compile(gl, QVS, QFS);
     this.u = {};
-    for (const n of ['u_vp', 'u_atlas', 'u_scalar', 'u_state', 'u_static']) this.u[n] = gl.getUniformLocation(this.prog, n);
+    for (const n of ['u_vp', 'u_atlas', 'u_scalar', 'u_state', 'u_static', 'u_watlas']) this.u[n] = gl.getUniformLocation(this.prog, n);
     this.qu = { vp: gl.getUniformLocation(this.qprog, 'u_vp'), img: gl.getUniformLocation(this.qprog, 'u_img'), dim: gl.getUniformLocation(this.qprog, 'u_dim') };
     this.cubeBuf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.cubeBuf);
     gl.bufferData(gl.ARRAY_BUFFER, cube(), gl.STATIC_DRAW);
     this.vao = null;
-    this.tex = { atlas: gl.createTexture(), scalar: gl.createTexture(), state: gl.createTexture(), img: gl.createTexture() };
+    this.tex = { atlas: gl.createTexture(), scalar: gl.createTexture(), state: gl.createTexture(), img: gl.createTexture(), watlas: gl.createTexture() };
     for (const t of Object.values(this.tex)) {
       gl.bindTexture(gl.TEXTURE_2D, t);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -186,6 +197,12 @@ export class Renderer {
     gl.bindTexture(gl.TEXTURE_2D, this.tex.scalar);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, w, h, 0, gl.RED, gl.FLOAT, floats);
   }
+  uploadWeightAtlas(w, h, bytes) {
+    const gl = this.gl;
+    gl.bindTexture(gl.TEXTURE_2D, this.tex.watlas);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, w, h, 0, gl.RED, gl.UNSIGNED_BYTE, bytes);
+  }
   uploadImage(img) {
     const gl = this.gl;
     gl.bindTexture(gl.TEXTURE_2D, this.tex.img);
@@ -218,6 +235,7 @@ export class Renderer {
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.tex.atlas); gl.uniform1i(this.u.u_atlas, 0);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.tex.scalar); gl.uniform1i(this.u.u_scalar, 1);
     gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, this.tex.state); gl.uniform1i(this.u.u_state, 2);
+    gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, this.tex.watlas); gl.uniform1i(this.u.u_watlas, 4);
     gl.bindVertexArray(this.vao);
     gl.drawArraysInstanced(gl.TRIANGLES, 0, 36, this.scene.count);
     gl.disable(gl.CULL_FACE);

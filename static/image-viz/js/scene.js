@@ -9,7 +9,7 @@
 // 标量纹理（每步一张 R32F，宽 SW）：每一行放一组标量（文本 token RMS、各头注意文本比例、文本编码器各层…）。
 
 export const PAL = { ACT: 0, ATTN: 1, TXT: 2, WEIGHT: 3, GREY: 4, IMG: 5 };
-export const SRC = { STATIC: 0, ATLAS: 1, SCALAR: 2 };
+export const SRC = { STATIC: 0, ATLAS: 1, SCALAR: 2, WATLAS: 3 };
 
 // 静态颜色表（与着色器中的 u_static 对应）
 export const STATIC_COLORS = [
@@ -52,6 +52,9 @@ export function buildScene(meta) {
     b.minY = Math.min(b.minY, y);
   };
   const addScalarRow = (name, len) => { scalarRows.push({ name, len }); return scalarRows.length - 1; };
+  // 权重抽样图集：每个矩阵一格 64×64 的真实数值
+  const WT = meta.wtile || 64, WC = meta.wcols || 8;
+  const wtile = (name) => (meta.windex && name ? meta.windex[name] : null);
 
   // 64×64 图像 token 网格：每个 token 一根柱子，高度/颜色来自当前步的图集
   const gridGroup = (g, x0, z0, tile, hmax = 10) => {
@@ -192,14 +195,23 @@ export function buildScene(meta) {
       lastGroup = m.group;
       const sc = { attn: 3, mlp: 4, mod: 5, io: 8 }[m.group] ?? 0;
       const nx = Math.max(1, Math.round(w / s)), nz = Math.max(1, Math.round(d / s));
+      const tt = wtile(m.name);
       for (let i = 0; i < nx; i++) {
         for (let j = 0; j < nz; j++) {
-          push(g, x0 + cx + i * s, 0, z0 + cz + j * s, s * 0.92, SRC.STATIC, 0, 0, PAL.GREY, 1.6, 0.15, sc);
+          if (tt) {
+            // 每个小方块取这个矩阵里对应位置的真实数值
+            const px = Math.min(WT - 1, Math.floor((i + 0.5) / nx * WT));
+            const py = Math.min(WT - 1, Math.floor((j + 0.5) / nz * WT));
+            push(g, x0 + cx + i * s, 0, z0 + cz + j * s, s * 0.92, SRC.WATLAS,
+              (tt.tile % WC) * WT + px, Math.floor(tt.tile / WC) * WT + py, PAL.GREY, 1.6, 0.15, sc);
+          } else {
+            push(g, x0 + cx + i * s, 0, z0 + cz + j * s, s * 0.92, SRC.STATIC, 0, 0, PAL.GREY, 1.6, 0.15, sc);
+          }
         }
       }
       const labZ = z0 + cz + d / 2 + ((k++ % 2) ? 6 : -6);
       g.subLabels.push({ text: m.short || m.name, sub: `${rows}×${cols} · ${fmtP(m.params)}`, pos: [x0 + cx + w / 2, 0, labZ] });
-      g.plates.push({ x: x0 + cx, z: z0 + cz, w, d, m });
+      g.plates.push({ x: x0 + cx, z: z0 + cz, w, d, m, t: tt });
       cx += w + GAP;
       rowD = Math.max(rowD, d);
     }
@@ -231,9 +243,18 @@ export function buildScene(meta) {
     // 一块平板；dz 为标签相对平板前沿的偏移（负 = 在前方，正 = 在后方）
     const slab = (x, z, w, d, col, mod, label, dz) => {
       const nx = Math.max(1, Math.round(w / s)), nz = Math.max(1, Math.round(d / s));
-      for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++)
-        push(g, X0 + x + i * s, 0, Z0 + z + j * s, s * 0.92, SRC.STATIC, 0, 0, PAL.GREY, 1.8, 0.2, col);
-      if (mod) g.plates.push({ x: X0 + x, z: Z0 + z, w, d, m: mod });
+      const tt = mod ? wtile(mod.name) : null;
+      for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
+        if (tt) {
+          const px = Math.min(WT - 1, Math.floor((i + 0.5) / nx * WT));
+          const py = Math.min(WT - 1, Math.floor((j + 0.5) / nz * WT));
+          push(g, X0 + x + i * s, 0, Z0 + z + j * s, s * 0.92, SRC.WATLAS,
+            (tt.tile % WC) * WT + px, Math.floor(tt.tile / WC) * WT + py, PAL.GREY, 1.8, 0.2, col);
+        } else {
+          push(g, X0 + x + i * s, 0, Z0 + z + j * s, s * 0.92, SRC.STATIC, 0, 0, PAL.GREY, 1.8, 0.2, col);
+        }
+      }
+      if (mod) g.plates.push({ x: X0 + x, z: Z0 + z, w, d, m: mod, t: tt });
       if (label) g.subLabels.push({ text: label, sub: '', pos: [X0 + x + w / 2, 0, Z0 + z + (dz ?? -5)] });
       return w;
     };
@@ -254,7 +275,11 @@ export function buildScene(meta) {
 
     // ② 文本编码器（36 层折叠成一叠）
     const te = m.components.text_encoder;
-    for (let i = 0; i < 6; i++) slab(cx, 2 + i * 4.2, 34, 3, 5, null, '', 0);
+    const teMod = wtile('文本编码器 第0层 q_proj')
+      ? { name: '文本编码器 第0层 q_proj', short: '文本编码器 第0层 q_proj',
+          shape: [te.hidden, te.hidden], params: te.hidden * te.hidden,
+          desc: `文本编码器第 0 层的 q 投影（代表 ${te.layers} 层里的一层）` } : null;
+    for (let i = 0; i < 6; i++) slab(cx, 2 + i * 4.2, 34, 3, 5, teMod, '', 0);
     g.subLabels.push({ text: `文本编码器 ×${te.layers}`, sub: '', pos: [X0 + cx + 17, 0, Z0 - 22] });
     g.subLabels.push({ text: '', sub: '', pos: [X0 + cx + 17, 0, Z0 + 30] });
     g.plates.push({ x: X0 + cx, z: Z0 + 2, w: 34, d: 26, m: { name: `文本编码器 ${te.class}`, short: `文本编码器 · ${te.layers} 层`, shape: [te.layers, te.hidden], params: te.params, desc: `只算一次；${isQwen ? '取最后一层' : '取第 4…32 层堆叠'}` } });
@@ -328,7 +353,11 @@ export function buildScene(meta) {
       slab(cx, 13 - d / 2, w, d, 8, pout, 'proj_out', -5); arrow(cx + w + 2, 13, 8); cx += w + 42;
     }
     slab(cx, 3, 18, 18, 3, null, '速度 v', -5); arrow(cx + 20, 13, 8); cx += 38;
-    slab(cx, 1, 16, 24, 6, null, 'VAE 解码器', -18); arrow(cx + 18, 13, 8); cx += 34;
+    const vaeTile = wtile('VAE 解码器 conv_in');
+    const vaeMod = vaeTile ? { name: 'VAE 解码器 conv_in', short: 'VAE 解码器 conv_in',
+      shape: [vaeTile.rows, vaeTile.cols], params: vaeTile.rows * vaeTile.cols,
+      desc: 'VAE 解码器的第一个卷积（代表性一层）' } : null;
+    slab(cx, 1, 16, 24, 6, vaeMod, 'VAE 解码器', -18); arrow(cx + 18, 13, 8); cx += 34;
     slab(cx, 0, 30, 30, 6, null, '图像', -5);
     return g;
   };

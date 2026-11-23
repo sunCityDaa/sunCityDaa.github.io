@@ -4,6 +4,12 @@
 
 const fmtB = (n) => (n >= 1e9 ? (n / 1e9).toFixed(2) + 'B' : (n / 1e6).toFixed(1) + 'M');
 const isQ = (m) => m.model === 'qwen';
+// 权重统计（来自 w.json）：std 与取值范围，放在模块表里
+function wdist(m, name) {
+  const t = m.windex && m.windex[name];
+  if (!t) return '';
+  return `<div class="dist">std ${t.std.toFixed(4)} · ${t.min.toFixed(3)} … ${t.max.toFixed(3)}</div>`;
+}
 const sum = (a) => a.reduce((x, y) => x + y, 0);
 
 function spark(meta, cur) {
@@ -145,6 +151,7 @@ export const CHAPTERS = [
         <li><b>输出</b>：<code>norm_out</code> → <code>proj_out</code> 得到速度 v，VAE 解码成像素。</li>
       </ol>
       <p>把这一整条（除了文本编码）走 ${m.steps_n} 遍，就是一次出图。文本编码只在第 1 步前做一次，之后每步复用。</p>
+      <p><b>每一格都是真的权重</b>：平板不是纯色，而是按矩阵里等距抽样的真实数值上色——<span class="sw" style="background:#33549e"></span>深蓝为负、<span class="sw" style="background:#ad3033"></span>深红为正、浅灰接近 0。悬停任意一格可以看到具体数值、行列号，以及这个矩阵的 mean / std / 范围。</p>
       <p class="hint">下一章把一个 block 的矩阵按真实行列比铺开；再下一章是 block 之外的嵌入、投影和调制。悬停任意平板可以看全名、形状、参数量。</p>`;
     },
   },
@@ -159,9 +166,10 @@ export const CHAPTERS = [
       const mlp = mats.filter((x) => x.group === 'mlp').reduce((t, x) => t + x.params, 0);
       const vecs = a.block.modules.filter((x) => x.kind !== 'w');
       const rows = (list) => list.filter((x) => x.kind === 'w').map((x) =>
-        `<tr><td><code>${x.name}</code></td><td class="num">${x.shape.join(' × ')}</td><td class="num">${fmtB(x.params)}</td><td>${x.desc}</td></tr>`).join('');
+        `<tr><td><code>${x.name}</code></td><td class="num">${x.shape.join(' × ')}</td><td class="num">${fmtB(x.params)}</td><td>${x.desc}${wdist(m, x.name)}</td></tr>`).join('');
       return `<p>前面几章看的都是<b>数据</b>——激活和注意力。这一章看<b>模型本身</b>：${a.block.class} 里到底有哪些矩阵、各是什么形状。</p>
-      <p>场景下方每一块平板就是一个权重矩阵：长边对应较大的那一维，短边对应较小的一维，所以<b>平板的面积 ∝ 行 × 列</b>，也就是参数量。颜色：<span class="sw" style="background:#8ca6e6"></span>注意力 q/k/v/o，<span class="sw" style="background:#9ecc9e"></span>MLP，<span class="sw" style="background:#d9b7e6"></span>调制，<span class="sw" style="background:#66bab2"></span>输入/输出投影。</p>
+      <p>场景下方每一块平板就是一个权重矩阵：长边对应较大的那一维，短边对应较小的一维，所以<b>平板的面积 ∝ 行 × 列</b>，也就是参数量。</p>
+      <p><b>格子的颜色是真实的权重值</b>：每个矩阵按等距抽样取了 64×64 个数，<span class="sw" style="background:#33549e"></span>深蓝是负的、<span class="sw" style="background:#ad3033"></span>深红是正的、浅灰接近 0。把鼠标停在任意一格上，可以看到这个数的具体值、它在矩阵里的行列号，以及整个矩阵的 mean / std / 取值范围。</p>
       <p>实测这一层共 <b>${mats.length} 个矩阵 + ${vecs.length} 个归一化向量</b>，合计 ${fmtB(a.block.params)} 参数：</p>
       <div class="tablewrap"><table class="cmp arch"><tr><th>模块</th><th>形状</th><th>参数</th><th>作用</th></tr>${rows(a.block.modules)}</table></div>
       <p>${isQ(m)
@@ -178,7 +186,7 @@ export const CHAPTERS = [
       const a = m.arch;
       if (!a) return '<p>正在加载架构数据……</p>';
       const rows = (list) => list.filter((x) => x.kind === 'w').map((x) =>
-        `<tr><td><code>${x.name}</code></td><td class="num">${x.shape.join(' × ')}</td><td class="num">${fmtB(x.params)}</td><td>${x.desc}</td></tr>`).join('');
+        `<tr><td><code>${x.name}</code></td><td class="num">${x.shape.join(' × ')}</td><td class="num">${fmtB(x.params)}</td><td>${x.desc}${wdist(m, x.name)}</td></tr>`).join('');
       const sum = a.io.filter((x) => x.kind === 'w').reduce((t, x) => t + x.params, 0);
       return `<p>block 之外，模型还有这些矩阵：把潜变量和文本投进 hidden，把时间步变成调制向量，最后把 hidden 投回速度。合计 ${fmtB(sum)}。</p>
       <div class="tablewrap"><table class="cmp arch"><tr><th>模块</th><th>形状</th><th>参数</th><th>作用</th></tr>${rows(a.io)}</table></div>

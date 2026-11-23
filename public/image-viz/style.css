@@ -85,6 +85,7 @@ table.cmp.arch { font-size: 11.5px; font-family: var(--font); }
 table.cmp.arch th, table.cmp.arch td { padding: 3px 4px; }
 table.cmp.arch td.num { white-space: nowrap; font-variant-numeric: tabular-nums; color: #475467; }
 table.cmp.arch code { font-size: 10.5px; padding: 0 3px; white-space: normal; word-break: break-all; }
+.content .dist { font-size: 10.5px; color: #667085; margin-top: 2px; font-variant-numeric: tabular-nums; }
 .content .tablewrap { overflow-x: auto; margin: 6px 0; }
 
 .player { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--line); }
@@ -102,6 +103,7 @@ table.cmp.arch code { font-size: 10.5px; padding: 0 3px; white-space: normal; wo
 .tooltip { position: absolute; pointer-events: none; background: rgba(40, 16, 60, 0.94); color: #fff; padding: 7px 10px; border-radius: 6px; font-size: 12.5px; line-height: 1.55; max-width: 330px; z-index: 5; }
 .tooltip .v { font-family: ui-monospace, Menlo, monospace; color: #ffd166; }
 .tooltip code { font-family: ui-monospace, Menlo, monospace; background: rgba(255,255,255,0.12); padding: 0 4px; border-radius: 3px; }
+.tooltip .sub { color: #c9b6dd; font-size: 11.5px; }
 .view-tools { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; }
 .legend { position: absolute; bottom: 10px; right: 10px; background: rgba(255,255,255,0.92); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font-size: 12px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
 .legend .sep { width: 1px; height: 12px; background: var(--line); }
@@ -109,6 +111,7 @@ table.cmp.arch code { font-size: 10.5px; padding: 0 3px; white-space: normal; wo
 .ramp.act { background: linear-gradient(90deg, #dbe6f2, #78bfcc, #2978a8, #26216b); }
 .ramp.txt { background: linear-gradient(90deg, #e6e6eb, #f7c78c, #ed7a33, #9e330f); }
 .ramp.attn { background: linear-gradient(90deg, #f7e6eb, #f28f9e, #cc2e73, #5c0d5c); }
+.ramp.w { background: linear-gradient(90deg, #33549e, #e0e6ef, #ad3033); }
 .loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--muted); background: var(--bg); }
 .loading[hidden] { display: none; }
 
