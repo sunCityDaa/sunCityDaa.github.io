@@ -274,7 +274,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          63 min read
+          65 min read
         </span>
 
         
@@ -297,10 +297,11 @@
 <p>最终成品：</p>
 <ul>
 <li><strong>两个模型、14 章中文讲解</strong>：总览 → 提示词与 token → 文本编码器 → 噪声与潜变量 → 时间步与调制 → Transformer block → <strong>整体架构</strong> → <strong>权重矩阵</strong> → <strong>模型级模块</strong> → 残差流里的图像 → 词到图像区域 → 一步步去噪 → VAE 解码 → 两个模型对比。</li>
+<li><strong>权重也是真的</strong>：每个矩阵等距抽 64×64 个真实权重值上色，悬停给精确数值、行列号与 mean/std/范围——不是&quot;这一层有这么多参数&quot;的示意。</li>
 <li><strong>每一步都是真的</strong>：Qwen 走 40 步、FLUX 走 16 步，每步抓取所有 32（或 33）个 block 的 64×64 图像 token 激活。拖动时间轴，格子会跟着变。</li>
 <li><strong>注意力是复算出来的</strong>：导出时用模型自己的 QK-Norm 与 RoPE 重算 softmax，把「每个图像位置对每个词的注意力」画成热图。<code>LLM</code>、<code>VIZ</code> 集中在狐狸举的木牌上，<code>fox</code> 勾出狐狸，<code>paws</code> 落在爪子上，<code>trees</code>、<code>background</code> 落在背景。</li>
 <li><strong>x₀ 是真解码的</strong>：每步的速度 v 按 <code>x0 ≈ x_t − t·v</code> 得到估计，<strong>真的送进 VAE 解码</strong>，和 pipeline 自己的输出逐像素比对，平均误差只有 0.30/255。</li>
-<li><strong>零依赖、零构建</strong>：一个 <code>index.html</code> + 5 个 ES 模块 + 一份 13 MB 的数据目录。</li>
+<li><strong>零依赖、零构建</strong>：一个 <code>index.html</code> + 5 个 ES 模块 + 一份 13 MB 的数据目录（含权重抽样）。</li>
 </ul>
 <hr>
 <h2 id="目录">目录</h2>
@@ -732,7 +733,8 @@ dist   = pad · max(across/2/th, along/2/tv) + max(sx, sz)·0.08
 <p>每个 block 的模块参数量之和与实测完全一致：<strong>218.1M</strong> 与 <strong>122.7M</strong>，一分不差。</p>
 <h3 id="怎么画">怎么画</h3>
 <p>一个矩阵 → 一块平板：<strong>宽 = 列数 × 常数，深 = 行数 × 常数</strong>。于是平板的面积就正比于 <code>行 × 列</code>，也就是参数量。相机放在正上方（pitch ≈ 1.42），俯视时面积的比较是最直接的。</p>
-<p><img src="qwen-arch.png" alt="Qwen 的一个 block：4 块蓝板一样大（4096²），3 块绿板各是 3 倍面积（12288×4096）"></p>
+<p>而且<strong>平板不是纯色</strong>：每个矩阵按等距抽样取了 64×64 个真实权重，按数值上色（蓝负、红正、浅灰接近 0），悬停任意一格会给出这一格的精确值和它在矩阵里的行列号。</p>
+<p><img src="qwen-arch.png" alt="Qwen 一个 block 的七个权重矩阵：每格都是抽样到的真实权重值；左侧模块表给出每个矩阵的 std 与取值范围"></p>
 <p>一眼就能读出的几件事：</p>
 <ul>
 <li><strong>q/k/v/o 是四个独立的 4096²</strong>，不是融合的 qkv——所以是 4 块同样大的板。</li>
@@ -742,6 +744,15 @@ dist   = pad · max(across/2/th, along/2/tv) + max(sx, sz)·0.08
 <p>FLUX 那边同样的画法暴露出不同的比例：</p>
 <p><img src="flux-arch.png" alt="FLUX 的一个合流块：4 块 3072² 一样大，linear_in 是 6 倍面积"></p>
 <p><code>ff.linear_in</code> 一次算出 2×9216（gate 和 up 拼在一起），所以是 18432×3072，等于注意力矩阵的 <strong>6 倍面积</strong>；<code>linear_out</code> 是 9216×3072，3 倍。MLP 同样占这个 block 的 69%（84.9M / 122.7M）。</p>
+<h3 id="每一格都是真的">每一格都是真的</h3>
+<p>权重值来自 <code>safetensors.safe_open</code> 按名字单读张量（不加载整个模型），对每个二维矩阵：</p>
+<ol>
+<li>行、列各等距取 64 个下标，得到 64×64 个<strong>真实数值</strong>（是采样，不是块平均）；</li>
+<li>量化成 8 位：<code>128 + 127·w / absmax</code>；</li>
+<li>同时记录 mean / std / min / max 与 24 格直方图。</li>
+</ol>
+<p>图上颜色对量化值做了 <code>pow(·, 0.35)</code> 的提对比度（权重 std ≈ 0.05，线性映射会是一片浅灰），但<strong>悬停显示的数值是精确反解</strong>，没有经过这层映射。侧栏模块表里每个矩阵下面那行 <code>std 0.0462 · -1.531 … 1.563</code> 就是它的分布。</p>
+<p>分布本身也有意思：<code>attn.to_q</code> 的直方图几乎全挤在 ±0.15 之间，但最大值到了 1.56；<code>img_mlp.gate_layer</code> 的均值是 +0.0006，明显比其余矩阵偏正。这些都不是&quot;示意&quot;，是直接数出来的。</p>
 <h3 id="模型级模块调制的两种做法">模型级模块：调制的两种做法</h3>
 <p>第二张图把 block 之外的矩阵也铺开（Qwen 合计 135.8M，FLUX 273.3M）：</p>
 <ul>

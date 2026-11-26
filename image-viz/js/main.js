@@ -58,8 +58,10 @@ async function loadModel(key, onProgress) {
     jobs.push(loadImage(base + v.file).then((im) => { attn[k] = redChannel(im); tick(); }));
   }
   const final = loadImage(base + 'final.jpg').then((im) => { tick(); return im; });
+  const wmeta = await (await fetch(base + 'w.json')).json();
+  const wimg = await loadImage(base + 'w.png').then(redChannel);
   await Promise.all(jobs);
-  const m = { meta, atlas, x0, xt, attn, final: await final };
+  const m = { meta, atlas, x0, xt, attn, final: await final, wmeta, wimg };
   app.cache[key] = m;
   return m;
 }
@@ -92,6 +94,10 @@ async function switchModel(key, first = false) {
     return;
   }
   app.meta = m.meta; app.atlas = m.atlas; app.x0 = m.x0; app.xt = m.xt; app.attnStrips = m.attn;
+  app.watlas = m.wimg;
+  app.meta.wtile = m.wmeta.tile; app.meta.wcols = m.wmeta.cols;
+  app.meta.windex = {};
+  m.wmeta.tensors.forEach((t, i) => { app.meta.windex[t.name] = { ...t, tile: i }; });
   app.scene = buildScene(app.meta);
   app.scene.meta = app.meta;
   const ip = app.scene.imgPlane;
@@ -99,6 +105,7 @@ async function switchModel(key, first = false) {
   const jn = jointNames();
   app.scene.capGroups = app.meta.cap_blocks.map((i) => app.scene.blockGroups.find((g) => g.name === jn[i]));
   app.renderer.build(app.scene, STATIC_COLORS);
+  if (app.watlas) app.renderer.uploadWeightAtlas(app.watlas.w, app.watlas.h, app.watlas.data);
   app.word = Math.min(app.word, app.meta.words.length - 1);
   $('prompt').textContent = app.meta.prompt;
   $('final-img').src = m.final.src;
@@ -472,10 +479,21 @@ function pickInGroup(g, ray, [t0, t1]) {
       for (const pl of g.plates) {
         if (p[0] >= pl.x && p[0] <= pl.x + pl.w && p[2] >= pl.z && p[2] <= pl.z + pl.d && p[1] <= 1.8) {
           const mm = pl.m;
-          return { t, html: `<b>${mm.name}</b><br>${mm.shape.join(' × ')} = <span class="v">${(mm.params / 1e6).toFixed(1)}M</span> 参数<br>${mm.desc || ''}` };
+          let extra = '';
+          if (pl.t && app.watlas) {
+            const T = app.meta.wtile || 64, C = app.meta.wcols || 8;
+            const fx = Math.min(0.999, (p[0] - pl.x) / pl.w), fz = Math.min(0.999, (p[2] - pl.z) / pl.d);
+            const px = Math.floor(fx * T), py = Math.floor(fz * T);
+            const v8 = app.watlas.data[(Math.floor(pl.t.tile / C) * T + py) * app.watlas.w + (pl.t.tile % C) * T + px];
+            const val = (v8 - 128) / 127 * pl.t.absmax;
+            const row = Math.round(py / (T - 1) * (pl.t.rows - 1)), col = Math.round(px / (T - 1) * (pl.t.cols - 1));
+            extra = `<br>这一格 <span class="v">${val.toFixed(5)}</span>　(第 ${row} 行 / 第 ${col} 列)`
+              + `<br><span class="sub">mean ${pl.t.mean.toFixed(5)} · std ${pl.t.std.toFixed(4)}<br>范围 ${pl.t.min.toFixed(4)} … ${pl.t.max.toFixed(4)}</span>`;
+          }
+          return { t, html: `<b>${mm.name}</b><br>${mm.shape.join(' × ')} = <span class="v">${(mm.params / 1e6).toFixed(1)}M</span> 参数<br>${mm.desc || ''}${extra}` };
         }
       }
-      return null;
+      continue;   // 这一组只有平板，换下一个采样点（不要跳出整条射线）
     }
     if (g.grid) {
       const c = Math.floor(p[0] - g.grid.x0), r = Math.floor(p[2] - g.grid.z0);
@@ -561,5 +579,6 @@ function stageInfo(g) {
 }
 
 // 调试接口：控制台可用 __imgviz.app / gotoChapter(i) / setStep(i)
-window.__imgviz = { app, gotoChapter, setStep, CHAPTERS };
+// 调试接口：hoverAt(x, y) 用页面坐标模拟一次悬停，返回 tooltip 文本（没有命中则为 null）
+window.__imgviz = { app, gotoChapter, setStep, CHAPTERS, hoverAt: (x, y) => { hover({ clientX: x, clientY: y }); const t = $('tooltip'); return t.hidden ? null : t.innerText; } };
 main();
